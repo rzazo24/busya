@@ -273,7 +273,11 @@ function startAutoRefresh() {
 }
 
 async function fetchArrivals(stopId) {
-  showStatus('Buscando parada…', 'loading');
+  // Solo se muestra "Buscando parada…" en la primera carga (resultsEl aún oculto). En los
+  // refrescos de cada 30s (o el botón ↻) el panel ya está visible con datos: mostrar y
+  // ocultar ese aviso en cada vuelta es lo que producía el salto arriba-abajo del panel.
+  const isFirstLoad = resultsEl.hidden;
+  if (isFirstLoad) showStatus('Buscando parada…', 'loading');
 
   try {
     const res = await fetch(`/api/emt-arrives?stopId=${encodeURIComponent(stopId)}`);
@@ -289,8 +293,14 @@ async function fetchArrivals(stopId) {
 
     renderArrivals(payload);
   } catch (err) {
-    showStatus(`No se pudo obtener la parada ${stopId}: ${err.message}`, 'error');
-    resultsEl.hidden = true;
+    if (isFirstLoad) {
+      showStatus(`No se pudo obtener la parada ${stopId}: ${err.message}`, 'error');
+      resultsEl.hidden = true;
+    } else {
+      // Refresco en segundo plano: un fallo puntual (timeout, hipo de la API) no debe tapar
+      // datos buenos que ya están en pantalla ni mover el panel.
+      console.error(`Refresco de la parada ${stopId} falló:`, err.message);
+    }
   }
 }
 

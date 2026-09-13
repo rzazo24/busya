@@ -146,16 +146,7 @@ main {
   transition: opacity 0.15s ease;
 }
 
-.stop-form button:hover {
-  opacity: 0.85;
-}
-
 .favorites-open-btn {
-  color: var(--red);
-}
-
-.favorites-open-btn:hover {
-  border-color: var(--red);
   color: var(--red);
 }
 
@@ -234,11 +225,6 @@ main {
   align-items: center;
   justify-content: center;
   padding: 0;
-}
-
-.help-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 .arrivals-list {
@@ -420,10 +406,6 @@ main {
   padding: 2px 0;
 }
 
-.favorite-card__name:hover {
-  border-bottom-color: var(--grid);
-}
-
 .favorite-card__name:focus {
   outline: none;
   border-bottom-color: var(--accent);
@@ -439,11 +421,6 @@ main {
 .favorite-card__actions button:disabled {
   opacity: 0.3;
   cursor: default;
-}
-
-.favorite-card__actions button:disabled:hover {
-  border-color: var(--text-dim);
-  color: var(--text-dim);
 }
 
 .favorite-card__meta {
@@ -467,10 +444,6 @@ main {
   padding: 0;
 }
 
-.favorite-card__view:hover {
-  text-decoration: underline;
-}
-
 .panel-close {
   position: absolute;
   top: 12px;
@@ -485,9 +458,6 @@ main {
   line-height: 1;
 }
 
-.panel-close:hover {
-  color: var(--text);
-}
 
 .help-content h3 {
   font-size: 12px;
@@ -522,6 +492,44 @@ main {
 
 .legend-dot.eta-now {
   background: var(--red);
+}
+
+/* Todos los estados :hover van aquí, detrás de (hover: hover), en vez de sueltos junto a
+   cada regla. En táctil no hay "ratón que se va" tras el tap, así que un :hover normal se
+   queda encendido hasta el siguiente toque en cualquier otro sitio (p.ej. el botón ↻
+   "pegado" iluminado en móvil). Esta media query solo entra en dispositivos con hover de
+   verdad (ratón/trackpad). */
+@media (hover: hover) {
+  .stop-form button:hover {
+    opacity: 0.85;
+  }
+
+  .favorites-open-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .help-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .favorite-card__name:hover {
+    border-bottom-color: var(--grid);
+  }
+
+  .favorite-card__actions button:disabled:hover {
+    border-color: var(--text-dim);
+    color: var(--text-dim);
+  }
+
+  .favorite-card__view:hover {
+    text-decoration: underline;
+  }
+
+  .panel-close:hover {
+    color: var(--text);
+  }
 }
 
 @media (max-width: 480px) {
