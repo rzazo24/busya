@@ -62,7 +62,7 @@ body {
 }
 
 .brand h1 {
-  font-size: 15px;
+  font-size: 16px;
   letter-spacing: 3px;
   margin: 0;
   font-weight: 600;
@@ -72,7 +72,7 @@ body {
 .subtitle {
   margin: 0;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.5px;
 }
 
@@ -94,7 +94,7 @@ main {
 
 .stop-form label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -115,7 +115,7 @@ main {
   background: var(--panel-bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .stop-form input::placeholder {
@@ -134,7 +134,7 @@ main {
   background: var(--accent);
   color: #06170a;
   font-family: var(--font);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s ease;
@@ -167,7 +167,7 @@ main {
   background: var(--panel-bg);
   padding: 5px 8px 5px 12px;
   font-family: var(--font);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text);
   cursor: pointer;
 }
@@ -180,7 +180,7 @@ main {
   border: none;
   background: none;
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
   padding: 2px 4px;
@@ -192,7 +192,7 @@ main {
 
 #favorite-btn {
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 #favorite-btn.active {
@@ -207,7 +207,7 @@ main {
   border: 1px solid var(--grid);
   background: var(--panel-bg);
   margin: 12px 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-dim);
 }
 
@@ -235,7 +235,7 @@ main {
 }
 
 .panel-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   margin: 0;
   color: var(--text);
@@ -246,7 +246,7 @@ main {
   align-items: center;
   gap: 10px;
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
 }
 
@@ -258,7 +258,7 @@ main {
   border: 1px solid var(--text-dim);
   color: var(--text-dim);
   font-family: var(--font);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -286,7 +286,7 @@ main {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px dashed var(--grid);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .arrival-item:last-child {
@@ -304,20 +304,20 @@ main {
   background: var(--accent);
   color: #06170a;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .arrival-item__destination {
   grid-column: 2;
   grid-row: 1;
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .arrival-item__distance {
   grid-column: 2;
   grid-row: 2;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
 }
 
@@ -350,7 +350,7 @@ main {
   color: var(--text-dim);
   font-style: italic;
   padding: 8px 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .app-footer {
@@ -404,7 +404,7 @@ main {
   border: none;
   background: none;
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   line-height: 1;
 }
@@ -414,7 +414,7 @@ main {
 }
 
 .help-content h3 {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -426,7 +426,7 @@ main {
 }
 
 .help-content p {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
   margin: 0 0 8px;
 }
@@ -453,7 +453,7 @@ main {
     padding: 12px 16px;
   }
   .brand h1 {
-    font-size: 13px;
+    font-size: 14px;
     letter-spacing: 2px;
   }
   main {
