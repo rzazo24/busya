@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Tiempos de paso en tiempo real de los buses urbanos de EMT Madrid",
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   },

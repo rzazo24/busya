@@ -1,5 +1,11 @@
 # BusYa
 
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)
+
 Tiempos de paso en tiempo real de los buses urbanos de EMT Madrid para una parada dada.
 
 Tercer proyecto de una serie de apps con APIs públicas para portfolio (junto a
@@ -76,3 +82,8 @@ despliega cada archivo de `api/` como Function automáticamente.
 
 Añadir buses interurbanos vía la API de CRTM ([portal.crtm.es](https://portal.crtm.es)) como
 fuente de datos adicional, una vez que la integración con EMT esté estable.
+
+## Licencia
+
+Código bajo licencia MIT (ver [LICENSE](LICENSE)). Los datos de EMT Madrid se rigen por
+los términos de uso de su propia API, enlazada más arriba.
