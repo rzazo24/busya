@@ -13,6 +13,12 @@ const refreshBtn = document.getElementById('refresh-btn');
 let refreshTimer = null;
 let currentStopId = null;
 
+// Horario/frecuencia por línea de la última parada consultada (fallback cuando no hay
+// tiempo real fiable). A diferencia de los tiempos de paso, esto casi no cambia, así que
+// se pide una sola vez por parada, no en cada refresco de 30s.
+let stopSchedule = null; // Map<línea, {startTime, stopTime, minFreq, maxFreq}>
+let stopScheduleStopId = null;
+
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   const stopId = stopInput.value.trim();
@@ -28,7 +34,55 @@ function searchStop(stopId) {
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
   fetchArrivals(stopId);
+  ensureStopSchedule(stopId);
   startAutoRefresh();
+}
+
+// Se pide una sola vez por parada (no en cada refresco): el horario/frecuencia por línea
+// apenas cambia, así que no tiene sentido volver a pedirlo cada 30s como los tiempos de paso.
+async function ensureStopSchedule(stopId) {
+  if (stopScheduleStopId === stopId) return;
+
+  try {
+    const res = await fetch(`/api/emt-stop-detail?stopId=${encodeURIComponent(stopId)}`);
+    const payload = await res.json();
+    if (!res.ok || (payload.code && payload.code !== '00')) return;
+
+    const stop = payload.data?.[0]?.stops?.[0];
+    const lines = stop?.dataLine ?? [];
+    const today = dayTypeForToday();
+
+    const byLine = new Map();
+    for (const line of lines) {
+      const key = String(line.label ?? line.line);
+      const existing = byLine.get(key);
+      // Si hay varias entradas por tipo de día (LA/SA/FE), nos quedamos con la de hoy;
+      // si no hay ninguna que encaje, vale la primera que llegue.
+      if (!existing || line.dayType === today) {
+        byLine.set(key, line);
+      }
+    }
+
+    stopSchedule = byLine;
+    stopScheduleStopId = stopId;
+
+    // El detalle de la parada suele tardar más que los tiempos de paso (ida y vuelta extra
+    // a EMT). Si ya se pintaron resultados para esta parada sin el fallback, se repintan.
+    if (currentStopId === stopId && !resultsEl.hidden) {
+      fetchArrivals(stopId);
+    }
+  } catch {
+    // El fallback es un extra; si falla, simplemente no se muestra y ya está.
+  }
+}
+
+// Aproximación LA/SA/FE sin calendario de festivos: domingo se trata como festivo, que es
+// el patrón habitual de servicio de EMT. Los festivos entre semana no se detectan.
+function dayTypeForToday() {
+  const day = new Date().getDay(); // 0 = domingo
+  if (day === 0) return 'FE';
+  if (day === 6) return 'SA';
+  return 'LA';
 }
 
 function startAutoRefresh() {
@@ -112,11 +166,62 @@ function renderArrivalItem(arrival) {
 
   const distance = document.createElement('span');
   distance.className = 'arrival-item__distance';
-  // Sin ETA fiable no hay posición real del bus; DistanceBus no es un dato útil en ese caso.
-  distance.textContent = hasReliableEta(arrival.estimateArrive) ? formatDistance(arrival.DistanceBus) : '';
+  if (hasReliableEta(arrival.estimateArrive)) {
+    // Sin ETA fiable no hay posición real del bus; DistanceBus no es un dato útil en ese caso.
+    distance.textContent = formatDistance(arrival.DistanceBus);
+  } else {
+    distance.textContent = formatScheduleFallback(arrival.line);
+  }
 
   li.append(line, destination, eta, distance);
   return li;
+}
+
+// Cuando no hay tiempo real fiable, cae al horario/frecuencia de la línea (si ya se cargó
+// para esta parada vía ensureStopSchedule) en vez de dejar el hueco vacío.
+function formatScheduleFallback(line) {
+  if (stopScheduleStopId !== currentStopId || !stopSchedule) return '';
+
+  const info = stopSchedule.get(String(line));
+  if (!info?.startTime || !info?.stopTime) return '';
+
+  const startMin = parseTimeToMinutes(info.startTime);
+  const stopMin = parseTimeToMinutes(info.stopTime);
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  if (startMin == null || stopMin == null) return '';
+
+  if (!isServiceActive(nowMin, startMin, stopMin)) {
+    return `Fuera de servicio · reanuda ${formatHHMM(info.startTime)}`;
+  }
+
+  const minFreq = Number(info.minFreq) || 0;
+  const maxFreq = Number(info.maxFreq) || 0;
+  const freqText = minFreq && maxFreq
+    ? (minFreq === maxFreq ? `cada ${minFreq} min` : `cada ${minFreq}-${maxFreq} min`)
+    : null;
+
+  return freqText
+    ? `${freqText} · hasta ${formatHHMM(info.stopTime)}`
+    : `Servicio hasta ${formatHHMM(info.stopTime)}`;
+}
+
+function parseTimeToMinutes(hhmmss) {
+  const match = /^(\d{1,2}):(\d{2})/.exec(hhmmss);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function formatHHMM(hhmmss) {
+  return hhmmss.slice(0, 5);
+}
+
+// Las líneas nocturnas cruzan medianoche (p.ej. inicio 23:55, fin 06:00), así que el
+// intervalo activo puede "envolver" en vez de ser start <= now <= stop.
+function isServiceActive(nowMin, startMin, stopMin) {
+  if (startMin <= stopMin) {
+    return nowMin >= startMin && nowMin <= stopMin;
+  }
+  return nowMin >= startMin || nowMin <= stopMin;
 }
 
 // EMT documenta 999999 como "sin estimación" (>45min en líneas normales, >90min en nocturnas),
