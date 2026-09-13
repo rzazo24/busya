@@ -28,13 +28,14 @@ body {
   flex-direction: column;
   min-height: 100vh;
   /* 100dvh se recalcula a propósito cuando cambia el viewport visible (p. ej. al
-     esconderse/mostrarse la barra del navegador) — en una PWA instalada eso incluye el
-     instante justo después del lanzamiento, mientras iOS termina de asentar el tamaño real
-     de la ventana standalone, lo que se veía como el footer subiendo y luego bajando de
-     golpe. En modo standalone no hay barra de navegador que aparezca/desaparezca, así que
-     no hace falta ese recálculo dinámico: 100svh (viewport pequeño) se fija una vez y no
-     se mueve después. */
-  min-height: 100svh;
+     esconderse/mostrarse la barra del navegador), lo que en una PWA instalada se notaba
+     como el footer subiendo y bajando de golpe justo al lanzarla. 100svh (viewport
+     "pequeño") arregló el salto pero se quedaba corto: asume que hay una barra de navegador
+     desplegada reservando espacio, y en modo standalone no existe tal barra — nunca hay nada
+     que ocultar, así que el 100% real disponible es mayor y el footer quedaba flotando por
+     encima del borde de verdad. 100lvh (viewport "grande") sí representa ese máximo
+     disponible y, al no depender de una barra que aparece/desaparece, es igual de estable. */
+  min-height: 100lvh;
 }
 
 .topbar {
