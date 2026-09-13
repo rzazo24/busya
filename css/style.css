@@ -129,7 +129,9 @@ main {
   background: var(--panel-bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 15px;
+  /* Por debajo de 16px, iOS/Android hacen zoom automático al enfocar el input, lo que
+     descoloca el layout (p.ej. el botón Buscar se va fuera de la pantalla). */
+  font-size: 16px;
 }
 
 .stop-form input::placeholder {
