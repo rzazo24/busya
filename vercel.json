@@ -2,6 +2,9 @@
   "functions": {
     "api/emt-arrives.js": {
       "maxDuration": 10
+    },
+    "api/crtm-arrives.js": {
+      "maxDuration": 10
     }
   }
 }
