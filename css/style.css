@@ -196,8 +196,9 @@ main {
 }
 
 #favorite-btn.active {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--red);
+  color: var(--red);
+  text-shadow: 0 0 6px currentColor;
 }
 
 .status {

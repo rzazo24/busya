@@ -160,7 +160,7 @@ function removeFavorite(stopId) {
 
 function updateFavoriteBtn() {
   const active = currentStopId && isFavorite(currentStopId);
-  favoriteBtn.textContent = active ? '★' : '☆';
+  favoriteBtn.textContent = active ? '♥' : '♡';
   favoriteBtn.classList.toggle('active', Boolean(active));
   favoriteBtn.title = active ? 'Quitar de favoritos' : 'Guardar como favorita';
 }
