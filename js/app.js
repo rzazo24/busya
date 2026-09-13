@@ -112,21 +112,31 @@ function renderArrivalItem(arrival) {
 
   const distance = document.createElement('span');
   distance.className = 'arrival-item__distance';
-  // Con estimateArrive >= 999999 EMT no da posición real del bus; DistanceBus llega a 0 y no es dato útil.
-  distance.textContent = arrival.estimateArrive >= 999_999 ? '' : formatDistance(arrival.DistanceBus);
+  // Sin ETA fiable no hay posición real del bus; DistanceBus no es un dato útil en ese caso.
+  distance.textContent = hasReliableEta(arrival.estimateArrive) ? formatDistance(arrival.DistanceBus) : '';
 
   li.append(line, destination, eta, distance);
   return li;
 }
 
+// EMT documenta 999999 como "sin estimación" (>45min en líneas normales, >90min en nocturnas),
+// pero en la práctica las líneas nocturnas (N-) a veces devuelven valores absurdos en vez de ese
+// sentinel cuando no hay GPS en tiempo real (p.ej. "14815 min" en vez de 999999). Cualquier
+// estimación por encima de 90 min es igual de poco fiable, la trituremos o no como sentinel exacto.
+const MAX_RELIABLE_ETA_SECONDS = 90 * 60;
+
+function hasReliableEta(seconds) {
+  return typeof seconds === 'number' && seconds <= MAX_RELIABLE_ETA_SECONDS;
+}
+
 function formatEta(seconds) {
-  if (seconds >= 999_999) return '> 45 min';
+  if (!hasReliableEta(seconds)) return 'Sin estimación';
   if (seconds < 60) return 'Llegando';
   return `${Math.round(seconds / 60)} min`;
 }
 
 function etaClass(seconds) {
-  if (seconds >= 999_999) return 'eta-unknown';
+  if (!hasReliableEta(seconds)) return 'eta-unknown';
   if (seconds < 60) return 'eta-now';
   if (seconds < 300) return 'eta-soon';
   return '';
