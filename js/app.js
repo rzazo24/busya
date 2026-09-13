@@ -11,10 +11,14 @@ const lastUpdatedEl = document.getElementById('last-updated');
 const arrivalsListEl = document.getElementById('arrivals-list');
 const refreshBtn = document.getElementById('refresh-btn');
 const favoriteBtn = document.getElementById('favorite-btn');
-const favoritesListEl = document.getElementById('favorites-list');
 const helpOpenBtn = document.getElementById('help-open');
 const helpCloseBtn = document.getElementById('help-close');
 const helpOverlay = document.getElementById('help-overlay');
+const favoritesOpenBtn = document.getElementById('favorites-open');
+const favoritesCloseBtn = document.getElementById('favorites-close');
+const favoritesOverlay = document.getElementById('favorites-overlay');
+const favoritesManageListEl = document.getElementById('favorites-manage-list');
+const favoritesEmptyEl = document.getElementById('favorites-empty');
 
 let refreshTimer = null;
 let currentStopId = null;
@@ -41,23 +45,6 @@ favoriteBtn.addEventListener('click', () => {
   if (!currentStopId) return;
   toggleFavorite(currentStopId, currentStopName);
   updateFavoriteBtn();
-  renderFavoritesList();
-});
-
-favoritesListEl.addEventListener('click', (event) => {
-  const removeBtn = event.target.closest('.favorite-chip__remove');
-  if (removeBtn) {
-    event.stopPropagation();
-    removeFavorite(removeBtn.closest('.favorite-chip').dataset.stopId);
-    renderFavoritesList();
-    updateFavoriteBtn();
-    return;
-  }
-  const chip = event.target.closest('.favorite-chip');
-  if (chip) {
-    stopInput.value = chip.dataset.stopId;
-    searchStop(chip.dataset.stopId);
-  }
 });
 
 helpOpenBtn.addEventListener('click', () => { helpOverlay.hidden = false; });
@@ -65,8 +52,20 @@ helpCloseBtn.addEventListener('click', () => { helpOverlay.hidden = true; });
 helpOverlay.addEventListener('click', (event) => {
   if (event.target === helpOverlay) helpOverlay.hidden = true;
 });
+
+favoritesOpenBtn.addEventListener('click', () => {
+  renderFavoritesManageList();
+  favoritesOverlay.hidden = false;
+});
+favoritesCloseBtn.addEventListener('click', () => { favoritesOverlay.hidden = true; });
+favoritesOverlay.addEventListener('click', (event) => {
+  if (event.target === favoritesOverlay) favoritesOverlay.hidden = true;
+});
+
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !helpOverlay.hidden) helpOverlay.hidden = true;
+  if (event.key !== 'Escape') return;
+  if (!helpOverlay.hidden) helpOverlay.hidden = true;
+  if (!favoritesOverlay.hidden) favoritesOverlay.hidden = true;
 });
 
 function searchStop(stopId) {
@@ -165,28 +164,105 @@ function updateFavoriteBtn() {
   favoriteBtn.title = active ? 'Quitar de favoritos' : 'Guardar como favorita';
 }
 
-function renderFavoritesList() {
+function updateFavoriteName(stopId, name) {
   const favorites = getFavorites();
-  favoritesListEl.innerHTML = '';
-  favoritesListEl.hidden = favorites.length === 0;
+  const fav = favorites.find((f) => f.stopId === stopId);
+  if (!fav) return;
+  fav.name = name || null;
+  saveFavorites(favorites);
+}
 
-  for (const fav of favorites) {
-    const li = document.createElement('li');
-    li.className = 'favorite-chip';
-    li.dataset.stopId = fav.stopId;
+function moveFavorite(index, direction) {
+  const favorites = getFavorites();
+  const target = index + direction;
+  if (target < 0 || target >= favorites.length) return;
+  [favorites[index], favorites[target]] = [favorites[target], favorites[index]];
+  saveFavorites(favorites);
+  renderFavoritesManageList();
+}
 
-    const label = document.createElement('span');
-    label.textContent = fav.name ? `${fav.name}` : `Parada ${fav.stopId}`;
+// Panel de favoritos: una tarjeta por parada (mismo estilo que el panel de resultados),
+// independiente del buscador — se abre desde la topbar, con nombre editable y orden propio.
+function renderFavoritesManageList() {
+  const favorites = getFavorites();
+  favoritesEmptyEl.hidden = favorites.length > 0;
+  favoritesManageListEl.innerHTML = '';
 
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'favorite-chip__remove';
-    remove.setAttribute('aria-label', `Quitar ${fav.name || fav.stopId} de favoritos`);
-    remove.textContent = '×';
+  favorites.forEach((fav, index) => {
+    favoritesManageListEl.appendChild(renderFavoriteCard(fav, index, favorites.length));
+  });
+}
 
-    li.append(label, remove);
-    favoritesListEl.appendChild(li);
-  }
+function renderFavoriteCard(fav, index, total) {
+  const card = document.createElement('div');
+  card.className = 'panel favorite-card';
+
+  const header = document.createElement('div');
+  header.className = 'favorite-card__header';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'favorite-card__name';
+  nameInput.value = fav.name || '';
+  nameInput.placeholder = `Parada ${fav.stopId}`;
+  nameInput.setAttribute('aria-label', `Nombre de la parada ${fav.stopId}`);
+  nameInput.addEventListener('change', () => updateFavoriteName(fav.stopId, nameInput.value.trim()));
+  nameInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') nameInput.blur();
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'favorite-card__actions';
+
+  const upBtn = document.createElement('button');
+  upBtn.type = 'button';
+  upBtn.className = 'help-btn';
+  upBtn.textContent = '↑';
+  upBtn.setAttribute('aria-label', 'Subir en la lista');
+  upBtn.disabled = index === 0;
+  upBtn.addEventListener('click', () => moveFavorite(index, -1));
+
+  const downBtn = document.createElement('button');
+  downBtn.type = 'button';
+  downBtn.className = 'help-btn';
+  downBtn.textContent = '↓';
+  downBtn.setAttribute('aria-label', 'Bajar en la lista');
+  downBtn.disabled = index === total - 1;
+  downBtn.addEventListener('click', () => moveFavorite(index, 1));
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'help-btn';
+  removeBtn.textContent = '×';
+  removeBtn.setAttribute('aria-label', `Quitar ${fav.name || fav.stopId} de favoritos`);
+  removeBtn.addEventListener('click', () => {
+    removeFavorite(fav.stopId);
+    renderFavoritesManageList();
+    updateFavoriteBtn();
+  });
+
+  actions.append(upBtn, downBtn, removeBtn);
+  header.append(nameInput, actions);
+
+  const meta = document.createElement('div');
+  meta.className = 'favorite-card__meta';
+
+  const stopIdEl = document.createElement('span');
+  stopIdEl.textContent = `Parada ${fav.stopId}`;
+
+  const viewBtn = document.createElement('button');
+  viewBtn.type = 'button';
+  viewBtn.className = 'favorite-card__view';
+  viewBtn.textContent = 'Ver tiempos →';
+  viewBtn.addEventListener('click', () => {
+    favoritesOverlay.hidden = true;
+    stopInput.value = fav.stopId;
+    searchStop(fav.stopId);
+  });
+
+  meta.append(stopIdEl, viewBtn);
+  card.append(header, meta);
+  return card;
 }
 
 function startAutoRefresh() {
@@ -242,7 +318,6 @@ function renderArrivals(payload) {
     if (fav && !fav.name) {
       fav.name = currentStopName;
       saveFavorites(favorites);
-      renderFavoritesList();
     }
   }
 
@@ -385,8 +460,6 @@ function showStatus(message, kind) {
 function hideStatus() {
   statusEl.hidden = true;
 }
-
-renderFavoritesList();
 
 // Recupera la última parada consultada para no partir de cero.
 const lastStopId = localStorage.getItem(LAST_STOP_STORAGE_KEY);

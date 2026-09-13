@@ -19,7 +19,8 @@
       <h1>BUSYA</h1>
     </div>
     <p class="subtitle">Tiempos de paso en vivo · EMT Madrid</p>
-    <button id="help-open" class="help-btn topbar-help" type="button" aria-label="Ayuda">?</button>
+    <button id="favorites-open" class="help-btn topbar-help favorites-open-btn" type="button" aria-label="Favoritos">♥</button>
+    <button id="help-open" class="help-btn" type="button" aria-label="Ayuda">?</button>
   </header>
 
   <main>
@@ -38,8 +39,6 @@
         <button type="submit">Buscar</button>
       </div>
     </form>
-
-    <ul id="favorites-list" class="favorites-list" hidden></ul>
 
     <section id="status" class="status" aria-live="polite" hidden></section>
 
@@ -67,8 +66,19 @@
         <p><span class="legend-dot eta-now"></span> menos de 1 min · <span class="legend-dot eta-soon"></span> menos de 5 min · <span class="legend-dot"></span> 5 min o más</p>
         <p>Cuando una línea no tiene tiempo real fiable (frecuente de madrugada), se muestra en su lugar la frecuencia de servicio programada.</p>
         <h3>Favoritos</h3>
-        <p>Pulsa el corazón ♡ junto a una parada para guardarla. <strong>Los favoritos se guardan solo en este navegador</strong> — no se sincronizan entre dispositivos ni sobreviven a borrar los datos del sitio.</p>
+        <p>Pulsa el corazón ♡ junto a una parada para guardarla. Desde el ♥ de la cabecera accedes a todos tus favoritos en tarjetas propias, donde puedes renombrarlos y reordenarlos. <strong>Los favoritos se guardan solo en este navegador</strong> — no se sincronizan entre dispositivos ni sobreviven a borrar los datos del sitio.</p>
       </div>
+    </div>
+  </div>
+
+  <div id="favorites-overlay" class="help-overlay" hidden>
+    <div class="favorites-modal">
+      <div class="favorites-modal__header">
+        <h2 class="panel-title">Favoritos</h2>
+        <button id="favorites-close" class="help-btn" type="button" aria-label="Cerrar favoritos">✕</button>
+      </div>
+      <p id="favorites-empty" class="favorites-empty" hidden>Aún no tienes paradas favoritas. Pulsa ♡ junto a una parada para guardarla.</p>
+      <div id="favorites-manage-list" class="favorites-manage-list"></div>
     </div>
   </div>
 
