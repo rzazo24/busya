@@ -40,13 +40,13 @@ async function login() {
 
   cachedToken = accessData.accessToken;
 
-  // EMT suele dar el token con validez de ~1 hora (dateExpiration en ms epoch).
-  // Si no viene ese campo, asumimos 55 minutos por seguridad.
-  const expirationFromApi = accessData.dateExpiration
-    ? Number(accessData.dateExpiration)
-    : Date.now() + 55 * 60 * 1000;
+  // EMT devuelve "tokenSecExpiration": segundos de validez desde ahora (normalmente 3600),
+  // no una fecha de caducidad. Si no viene, asumimos 55 minutos por seguridad.
+  const secondsValid = accessData.tokenSecExpiration
+    ? Number(accessData.tokenSecExpiration)
+    : 55 * 60;
 
-  tokenExpiresAt = expirationFromApi;
+  tokenExpiresAt = Date.now() + secondsValid * 1000;
 
   return cachedToken;
 }
@@ -59,36 +59,45 @@ async function getValidToken() {
   return login();
 }
 
+// Cuerpo esperado por /arrives/: el stopId va en la URL, no en el body.
+// Text_EstimationsRequired_YN=Y es imprescindible: sin él la API no calcula estimateArrive.
+function buildArrivesBody() {
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  return {
+    cultureInfo: 'ES',
+    Text_StopRequired_YN: 'Y',
+    Text_EstimationsRequired_YN: 'Y',
+    Text_IncidencesRequired_YN: 'N',
+    DateTime_Referenced_Incidencies_YYYYMMDD: today,
+  };
+}
+
+function fetchArrives(stopId, token) {
+  return fetch(`${ARRIVES_URL_BASE}/${stopId}/arrives/`, {
+    method: 'POST',
+    headers: {
+      accessToken: token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(buildArrivesBody()),
+  });
+}
+
 export default async function handler(req, res) {
   const { stopId } = req.query;
 
-  if (!stopId) {
-    return res.status(400).json({ error: 'Falta el parámetro stopId' });
+  if (!stopId || !/^\d+$/.test(stopId)) {
+    return res.status(400).json({ error: 'Falta o es inválido el parámetro stopId (debe ser numérico)' });
   }
 
   try {
     let token = await getValidToken();
-
-    let arrivesRes = await fetch(`${ARRIVES_URL_BASE}/${stopId}/arrives/`, {
-      method: 'POST',
-      headers: {
-        accessToken: token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ stopId, cultureInfo: 'ES' }),
-    });
+    let arrivesRes = await fetchArrives(stopId, token);
 
     // Si el token ha caducado a mitad de camino, forzamos un login nuevo y reintentamos una vez.
     if (arrivesRes.status === 401) {
       token = await login();
-      arrivesRes = await fetch(`${ARRIVES_URL_BASE}/${stopId}/arrives/`, {
-        method: 'POST',
-        headers: {
-          accessToken: token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ stopId, cultureInfo: 'ES' }),
-      });
+      arrivesRes = await fetchArrives(stopId, token);
     }
 
     if (!arrivesRes.ok) {
