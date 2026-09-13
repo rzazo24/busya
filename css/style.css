@@ -35,7 +35,9 @@ body {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 22px 24px;
+  /* max() con env(safe-area-inset-top): en un navegador normal no cambia nada (el inset
+     vale 0), pero en la PWA instalada evita que el notch/isla dinámica tape el título. */
+  padding: max(22px, env(safe-area-inset-top)) 24px 22px;
   background: rgba(10, 15, 10, 0.92);
   border-bottom: 1px solid var(--grid);
 }
@@ -322,7 +324,12 @@ main {
   width: 100%;
   max-width: 720px;
   margin: 24px auto 0;
-  padding: 0 20px 24px;
+  /* max() en vez de un valor fijo: en un navegador normal deja solo un margen mínimo (10px),
+     pero en la PWA instalada en un iPhone con indicador de inicio crece lo justo para no
+     quedar tapado por él, en vez de sumar los dos valores (por eso max(), no simplemente
+     10px + env(...)). Requiere viewport-fit=cover en el <meta name="viewport"> del head;
+     sin él, env(safe-area-inset-bottom) siempre vale 0. */
+  padding: 0 20px max(10px, env(safe-area-inset-bottom));
   color: var(--text-dim);
   font-size: 10px;
   text-align: center;
@@ -544,7 +551,7 @@ main {
 
 @media (max-width: 480px) {
   .topbar {
-    padding: 16px 16px;
+    padding: max(16px, env(safe-area-inset-top)) 16px 16px;
   }
   .brand h1 {
     font-size: 16px;
@@ -559,7 +566,7 @@ main {
     padding: 0 16px;
   }
   .app-footer {
-    padding: 0 16px 24px;
+    padding: 0 16px max(8px, env(safe-area-inset-bottom));
     font-size: 7px;
     line-height: 1.5;
   }

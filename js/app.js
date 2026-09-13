@@ -477,3 +477,35 @@ if (lastStopId) {
   stopInput.value = lastStopId;
   searchStop(lastStopId);
 }
+
+// Cachea el shell de la app (ver sw.js) para que la PWA instalada cargue al instante y
+// funcione sin conexión. Si el registro falla (p.ej. servido por HTTP en algún entorno
+// local) no es grave: se registra en consola y ya está, la app sigue funcionando igual.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => console.error('SW registration failed', err));
+  });
+
+  // sw.js llama a skipWaiting()/clients.claim(), así que una versión nueva toma el control
+  // de una pestaña ya abierta de inmediato — pero esa pestaña sigue con el html/css/js
+  // antiguo ya cargado en memoria hasta que se recarga. "controllerchange" se dispara justo
+  // en ese momento, así que se recarga una vez para coger el shell nuevo; si no, una PWA
+  // dejada abierta un tiempo seguiría corriendo código viejo sin enterarse. Con guarda para
+  // no disparar dos veces, ya que el evento en teoría puede repetirse.
+  let reloadedForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadedForUpdate) return;
+    reloadedForUpdate = true;
+    window.location.reload();
+  });
+
+  // El navegador solo revisa sw.js en busca de cambios según su propio calendario (más o
+  // menos cada 24h, o al navegar) — para una PWA que se reabre desde segundo plano en vez
+  // de recargarse, eso puede dejarla desactualizada mucho más tiempo del deseado. Volver a
+  // comprobar cada vez que la pestaña vuelve a ser visible detecta antes las novedades.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then((reg) => reg && reg.update());
+    }
+  });
+}
