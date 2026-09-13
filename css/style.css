@@ -461,6 +461,7 @@ main {
   }
   .app-footer {
     padding: 0 16px 24px;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 1.5;
   }
 }
