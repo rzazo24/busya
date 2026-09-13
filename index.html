@@ -5,11 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BusYa · Tiempos de paso EMT Madrid</title>
   <meta name="description" content="Consulta en tiempo real los tiempos de paso de los buses urbanos de EMT Madrid en cualquier parada." />
+  <meta name="theme-color" content="#0a0f0a" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header class="app-header">
-    <h1>BusYa</h1>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <h1>BUSYA</h1>
+    </div>
     <p class="subtitle">Tiempos de paso en vivo · EMT Madrid</p>
   </header>
 
@@ -32,12 +40,12 @@
 
     <section id="status" class="status" aria-live="polite" hidden></section>
 
-    <section id="results" class="results" hidden>
+    <section id="results" class="panel" hidden>
       <div class="results__header">
-        <h2 id="stop-name">Parada</h2>
+        <h2 id="stop-name" class="panel-title">Parada</h2>
         <div class="results__meta">
           <span id="last-updated"></span>
-          <button id="refresh-btn" type="button" title="Actualizar ahora">↻</button>
+          <button id="refresh-btn" class="help-btn" type="button" title="Actualizar ahora" aria-label="Actualizar">↻</button>
         </div>
       </div>
       <ul id="arrivals-list" class="arrivals-list"></ul>

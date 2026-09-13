@@ -107,7 +107,7 @@ function renderArrivalItem(arrival) {
   destination.textContent = arrival.destination;
 
   const eta = document.createElement('span');
-  eta.className = 'arrival-item__eta';
+  eta.className = `arrival-item__eta ${etaClass(arrival.estimateArrive)}`;
   eta.textContent = formatEta(arrival.estimateArrive);
 
   const distance = document.createElement('span');
@@ -123,6 +123,13 @@ function formatEta(seconds) {
   if (seconds >= 999_999) return '> 45 min';
   if (seconds < 60) return 'Llegando';
   return `${Math.round(seconds / 60)} min`;
+}
+
+function etaClass(seconds) {
+  if (seconds >= 999_999) return 'eta-unknown';
+  if (seconds < 60) return 'eta-now';
+  if (seconds < 300) return 'eta-soon';
+  return '';
 }
 
 function formatDistance(meters) {
