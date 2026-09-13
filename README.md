@@ -21,15 +21,25 @@ email/password para obtener un `accessToken` (válido ~1 hora), así que no se p
 ```
 busya/
 ├── api/
-│   └── emt-arrives.js   # Proxy serverless: login + caché de token + GET /api/emt-arrives?stopId=
+│   ├── emt-arrives.js       # GET /api/emt-arrives?stopId= — tiempos de paso en tiempo real
+│   └── emt-stop-detail.js   # GET /api/emt-stop-detail?stopId= — horario/frecuencia por línea
+├── lib/
+│   └── emt-client.js        # Login + caché de accessToken, compartido por ambas funciones
 ├── css/
 │   └── style.css
 ├── js/
-│   └── app.js            # Lógica de búsqueda de parada y refresco de tiempos de paso
+│   └── app.js                # Búsqueda de parada, refresco de 30s y fallback a horario/frecuencia
 ├── index.html
+├── favicon.svg
 ├── .env.example
 └── package.json
 ```
+
+Cuando una línea no tiene tiempo real fiable (frecuente en líneas nocturnas sin GPS), el
+frontend cae a `/api/emt-stop-detail` y muestra la frecuencia de servicio de esa línea
+("cada 8-12 min · hasta 23:30") en vez de dejar el hueco vacío. La API de tiempo real de EMT
+no da la hora programada de paso por una parada concreta (eso solo está en su feed GTFS
+estático); usar el horario/frecuencia por línea evita depender de ese feed.
 
 ## Desarrollo local
 
@@ -60,7 +70,7 @@ busya/
 3. `npx vercel --prod`.
 
 No hace falta ningún paso de build: Vercel sirve `index.html`/`css`/`js` como estático y
-despliega `api/emt-arrives.js` como Function automáticamente.
+despliega cada archivo de `api/` como Function automáticamente.
 
 ## Fase 2 (pendiente)
 
