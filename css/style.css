@@ -76,7 +76,13 @@ body {
   letter-spacing: 0.5px;
 }
 
-.topbar-help {
+/* Agrupa los botones de acción en un solo item flex: al envolver en móvil, o se van
+   juntos a la siguiente línea o se quedan juntos en la actual, nunca se separan entre sí
+   (como pasaba con margin-left:auto puesto directamente en un botón suelto). */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
 }
 
