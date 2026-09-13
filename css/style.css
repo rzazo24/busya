@@ -32,10 +32,10 @@ body {
 
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 16px 20px;
+  padding: 22px 24px;
   background: rgba(10, 15, 10, 0.92);
   border-bottom: 1px solid var(--grid);
 }
@@ -43,12 +43,12 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .brand-dot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--red);
   box-shadow: 0 0 8px var(--red);
@@ -62,7 +62,7 @@ body {
 }
 
 .brand h1 {
-  font-size: 16px;
+  font-size: 19px;
   letter-spacing: 3px;
   margin: 0;
   font-weight: 600;
@@ -72,7 +72,7 @@ body {
 .subtitle {
   margin: 0;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.5px;
 }
 
@@ -82,8 +82,16 @@ body {
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-left: auto;
+}
+
+/* Un poco más grandes que el .help-btn de base (22px): solo en la topbar, no en los
+   iconos del panel de resultados ni de las tarjetas de favoritos. */
+.topbar-actions .help-btn {
+  width: 27px;
+  height: 27px;
+  font-size: 15px;
 }
 
 main {
@@ -534,18 +542,23 @@ main {
 
 @media (max-width: 480px) {
   .topbar {
-    padding: 12px 16px;
+    padding: 16px 16px;
   }
   .brand h1 {
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 2px;
+  }
+  .topbar-actions .help-btn {
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
   }
   main {
     padding: 0 16px;
   }
   .app-footer {
     padding: 0 16px 24px;
-    font-size: 8px;
+    font-size: 7px;
     line-height: 1.5;
   }
 }
