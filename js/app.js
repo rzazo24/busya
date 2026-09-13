@@ -1,5 +1,6 @@
 const REFRESH_INTERVAL_MS = 30_000;
 const LAST_STOP_STORAGE_KEY = 'busya:lastStopId';
+const FAVORITES_STORAGE_KEY = 'busya:favorites';
 
 const form = document.getElementById('stop-form');
 const stopInput = document.getElementById('stop-id');
@@ -9,9 +10,15 @@ const stopNameEl = document.getElementById('stop-name');
 const lastUpdatedEl = document.getElementById('last-updated');
 const arrivalsListEl = document.getElementById('arrivals-list');
 const refreshBtn = document.getElementById('refresh-btn');
+const favoriteBtn = document.getElementById('favorite-btn');
+const favoritesListEl = document.getElementById('favorites-list');
+const helpOpenBtn = document.getElementById('help-open');
+const helpCloseBtn = document.getElementById('help-close');
+const helpOverlay = document.getElementById('help-overlay');
 
 let refreshTimer = null;
 let currentStopId = null;
+let currentStopName = null;
 
 // Horario/frecuencia por línea de la última parada consultada (fallback cuando no hay
 // tiempo real fiable). A diferencia de los tiempos de paso, esto casi no cambia, así que
@@ -28,6 +35,38 @@ form.addEventListener('submit', (event) => {
 
 refreshBtn.addEventListener('click', () => {
   if (currentStopId) fetchArrivals(currentStopId);
+});
+
+favoriteBtn.addEventListener('click', () => {
+  if (!currentStopId) return;
+  toggleFavorite(currentStopId, currentStopName);
+  updateFavoriteBtn();
+  renderFavoritesList();
+});
+
+favoritesListEl.addEventListener('click', (event) => {
+  const removeBtn = event.target.closest('.favorite-chip__remove');
+  if (removeBtn) {
+    event.stopPropagation();
+    removeFavorite(removeBtn.closest('.favorite-chip').dataset.stopId);
+    renderFavoritesList();
+    updateFavoriteBtn();
+    return;
+  }
+  const chip = event.target.closest('.favorite-chip');
+  if (chip) {
+    stopInput.value = chip.dataset.stopId;
+    searchStop(chip.dataset.stopId);
+  }
+});
+
+helpOpenBtn.addEventListener('click', () => { helpOverlay.hidden = false; });
+helpCloseBtn.addEventListener('click', () => { helpOverlay.hidden = true; });
+helpOverlay.addEventListener('click', (event) => {
+  if (event.target === helpOverlay) helpOverlay.hidden = true;
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !helpOverlay.hidden) helpOverlay.hidden = true;
 });
 
 function searchStop(stopId) {
@@ -85,6 +124,71 @@ function dayTypeForToday() {
   return 'LA';
 }
 
+// Favoritos: solo en localStorage de este navegador (ver panel de ayuda) — sin cuentas
+// ni sincronización entre dispositivos.
+function getFavorites() {
+  try {
+    const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites(list) {
+  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(list));
+}
+
+function isFavorite(stopId) {
+  return getFavorites().some((fav) => fav.stopId === stopId);
+}
+
+function toggleFavorite(stopId, stopName) {
+  const favorites = getFavorites();
+  const index = favorites.findIndex((fav) => fav.stopId === stopId);
+  if (index >= 0) {
+    favorites.splice(index, 1);
+  } else {
+    favorites.push({ stopId, name: stopName || null });
+  }
+  saveFavorites(favorites);
+}
+
+function removeFavorite(stopId) {
+  saveFavorites(getFavorites().filter((fav) => fav.stopId !== stopId));
+}
+
+function updateFavoriteBtn() {
+  const active = currentStopId && isFavorite(currentStopId);
+  favoriteBtn.textContent = active ? '★' : '☆';
+  favoriteBtn.classList.toggle('active', Boolean(active));
+  favoriteBtn.title = active ? 'Quitar de favoritos' : 'Guardar como favorita';
+}
+
+function renderFavoritesList() {
+  const favorites = getFavorites();
+  favoritesListEl.innerHTML = '';
+  favoritesListEl.hidden = favorites.length === 0;
+
+  for (const fav of favorites) {
+    const li = document.createElement('li');
+    li.className = 'favorite-chip';
+    li.dataset.stopId = fav.stopId;
+
+    const label = document.createElement('span');
+    label.textContent = fav.name ? `${fav.name}` : `Parada ${fav.stopId}`;
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'favorite-chip__remove';
+    remove.setAttribute('aria-label', `Quitar ${fav.name || fav.stopId} de favoritos`);
+    remove.textContent = '×';
+
+    li.append(label, remove);
+    favoritesListEl.appendChild(li);
+  }
+}
+
 function startAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(() => {
@@ -125,9 +229,24 @@ function renderArrivals(payload) {
   const stopInfo = stopData.StopInfo?.[0];
   const arrivals = stopData.Arrive ?? [];
 
-  stopNameEl.textContent = stopInfo?.stopName
-    ? `${stopInfo.stopName} (parada ${currentStopId})`
+  currentStopName = stopInfo?.stopName || null;
+  stopNameEl.textContent = currentStopName
+    ? `${currentStopName} (parada ${currentStopId})`
     : `Parada ${currentStopId}`;
+
+  // Si esta parada ya estaba en favoritos sin nombre (se guardó antes de tener este dato),
+  // se completa en silencio la próxima vez que se consulta.
+  if (currentStopName && isFavorite(currentStopId)) {
+    const favorites = getFavorites();
+    const fav = favorites.find((f) => f.stopId === currentStopId);
+    if (fav && !fav.name) {
+      fav.name = currentStopName;
+      saveFavorites(favorites);
+      renderFavoritesList();
+    }
+  }
+
+  updateFavoriteBtn();
 
   arrivalsListEl.innerHTML = '';
 
@@ -266,6 +385,8 @@ function showStatus(message, kind) {
 function hideStatus() {
   statusEl.hidden = true;
 }
+
+renderFavoritesList();
 
 // Recupera la última parada consultada para no partir de cero.
 const lastStopId = localStorage.getItem(LAST_STOP_STORAGE_KEY);

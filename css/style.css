@@ -76,6 +76,10 @@ body {
   letter-spacing: 0.5px;
 }
 
+.topbar-help {
+  margin-left: auto;
+}
+
 main {
   flex: 1 0 auto;
   width: 100%;
@@ -138,6 +142,62 @@ main {
 
 .stop-form button:hover {
   opacity: 0.85;
+}
+
+.favorites-list {
+  list-style: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+/* Mismo motivo que .help-overlay:not([hidden]) más abajo: sin esto, [hidden] pierde el
+   empate de especificidad contra display:flex y la lista se ve aunque esté vacía. */
+.favorites-list:not([hidden]) {
+  display: flex;
+}
+
+.favorite-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--grid);
+  border-radius: 14px;
+  background: var(--panel-bg);
+  padding: 5px 8px 5px 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.favorite-chip:hover {
+  border-color: var(--accent);
+}
+
+.favorite-chip__remove {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.favorite-chip__remove:hover {
+  color: var(--red);
+}
+
+#favorite-btn {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+#favorite-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .status {
@@ -306,6 +366,85 @@ main {
   color: var(--accent);
   text-decoration: none;
   border-bottom: 1px dashed var(--accent);
+}
+
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 15, 10, 0.8);
+}
+
+/* [hidden] y .help-overlay{display:flex} tienen la misma especificidad; sin este :not(),
+   la regla de abajo gana por venir después en la cascada y el overlay bloquea clics en
+   toda la página incluso con el atributo hidden puesto. */
+.help-overlay:not([hidden]) {
+  display: flex;
+}
+
+.help-panel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  margin-top: 0;
+}
+
+.panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.panel-close:hover {
+  color: var(--text);
+}
+
+.help-content h3 {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 18px 0 8px;
+}
+
+.help-content h3:first-of-type {
+  margin-top: 14px;
+}
+
+.help-content p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 2px;
+}
+
+.legend-dot.eta-soon {
+  background: var(--orange);
+}
+
+.legend-dot.eta-now {
+  background: var(--red);
 }
 
 @media (max-width: 480px) {
