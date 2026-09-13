@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/emt-arrives.js": {
+      "maxDuration": 10
+    }
+  }
+}
