@@ -1,6 +1,8 @@
 const REFRESH_INTERVAL_MS = 30_000;
 const LAST_STOP_STORAGE_KEY = 'busya:lastStopId';
+const LAST_NETWORK_STORAGE_KEY = 'busya:lastNetwork';
 const FAVORITES_STORAGE_KEY = 'busya:favorites';
+const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 
 const form = document.getElementById('stop-form');
 const stopInput = document.getElementById('stop-id');
@@ -19,10 +21,12 @@ const favoritesCloseBtn = document.getElementById('favorites-close');
 const favoritesOverlay = document.getElementById('favorites-overlay');
 const favoritesManageListEl = document.getElementById('favorites-manage-list');
 const favoritesEmptyEl = document.getElementById('favorites-empty');
+const networkToggleBtns = document.querySelectorAll('.network-toggle__btn');
 
 let refreshTimer = null;
 let currentStopId = null;
 let currentStopName = null;
+let currentNetwork = 'emt';
 
 // Horario/frecuencia por línea de la última parada consultada (fallback cuando no hay
 // tiempo real fiable). A diferencia de los tiempos de paso, esto casi no cambia, así que
@@ -30,20 +34,24 @@ let currentStopName = null;
 let stopSchedule = null; // Map<línea, {startTime, stopTime, minFreq, maxFreq}>
 let stopScheduleStopId = null;
 
+networkToggleBtns.forEach((btn) => {
+  btn.addEventListener('click', () => setNetwork(btn.dataset.network));
+});
+
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   const stopId = stopInput.value.trim();
   if (!stopId) return;
-  searchStop(stopId);
+  searchStop(stopId, currentNetwork);
 });
 
 refreshBtn.addEventListener('click', () => {
-  if (currentStopId) fetchArrivals(currentStopId);
+  if (currentStopId) fetchArrivals(currentStopId, currentNetwork);
 });
 
 favoriteBtn.addEventListener('click', () => {
   if (!currentStopId) return;
-  toggleFavorite(currentStopId, currentStopName);
+  toggleFavorite(currentStopId, currentNetwork, currentStopName);
   updateFavoriteBtn();
 });
 
@@ -68,11 +76,26 @@ document.addEventListener('keydown', (event) => {
   if (!favoritesOverlay.hidden) favoritesOverlay.hidden = true;
 });
 
-function searchStop(stopId) {
+function setNetwork(network) {
+  currentNetwork = network;
+  networkToggleBtns.forEach((btn) => {
+    const active = btn.dataset.network === network;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+  stopInput.placeholder = network === 'crtm' ? 'Ej. 06002' : 'Ej. 72';
+}
+
+function searchStop(stopId, network = currentNetwork) {
+  setNetwork(network);
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
-  fetchArrivals(stopId);
-  ensureStopSchedule(stopId);
+  localStorage.setItem(LAST_NETWORK_STORAGE_KEY, network);
+  fetchArrivals(stopId, network);
+  // El fallback de horario/frecuencia es una pieza propia de EMT (ver ensureStopSchedule):
+  // CRTM ya da siempre una hora de paso utilizable, incluido el hueco nocturno, así que no
+  // hace falta nada parecido para esa red.
+  if (network === 'emt') ensureStopSchedule(stopId);
   startAutoRefresh();
 }
 
@@ -106,8 +129,8 @@ async function ensureStopSchedule(stopId) {
 
     // El detalle de la parada suele tardar más que los tiempos de paso (ida y vuelta extra
     // a EMT). Si ya se pintaron resultados para esta parada sin el fallback, se repintan.
-    if (currentStopId === stopId && !resultsEl.hidden) {
-      fetchArrivals(stopId);
+    if (currentStopId === stopId && currentNetwork === 'emt' && !resultsEl.hidden) {
+      fetchArrivals(stopId, 'emt');
     }
   } catch {
     // El fallback es un extra; si falla, simplemente no se muestra y ya está.
@@ -138,35 +161,43 @@ function saveFavorites(list) {
   localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(list));
 }
 
-function isFavorite(stopId) {
-  return getFavorites().some((fav) => fav.stopId === stopId);
+// Favoritos guardados antes de que existiera CRTM no tienen "network": se tratan como EMT,
+// que era la única red posible entonces. Necesario para no confundir un "72" de EMT con un
+// "72" de interurbanos: ambos números de parada son válidos pero pertenecen a paradas
+// completamente distintas.
+function favoriteNetwork(fav) {
+  return fav.network || 'emt';
 }
 
-function toggleFavorite(stopId, stopName) {
+function isFavorite(stopId, network) {
+  return getFavorites().some((fav) => fav.stopId === stopId && favoriteNetwork(fav) === network);
+}
+
+function toggleFavorite(stopId, network, stopName) {
   const favorites = getFavorites();
-  const index = favorites.findIndex((fav) => fav.stopId === stopId);
+  const index = favorites.findIndex((fav) => fav.stopId === stopId && favoriteNetwork(fav) === network);
   if (index >= 0) {
     favorites.splice(index, 1);
   } else {
-    favorites.push({ stopId, name: stopName || null });
+    favorites.push({ stopId, network, name: stopName || null });
   }
   saveFavorites(favorites);
 }
 
-function removeFavorite(stopId) {
-  saveFavorites(getFavorites().filter((fav) => fav.stopId !== stopId));
+function removeFavorite(stopId, network) {
+  saveFavorites(getFavorites().filter((fav) => !(fav.stopId === stopId && favoriteNetwork(fav) === network)));
 }
 
 function updateFavoriteBtn() {
-  const active = currentStopId && isFavorite(currentStopId);
+  const active = currentStopId && isFavorite(currentStopId, currentNetwork);
   favoriteBtn.textContent = active ? '♥' : '♡';
   favoriteBtn.classList.toggle('active', Boolean(active));
   favoriteBtn.title = active ? 'Quitar de favoritos' : 'Guardar como favorita';
 }
 
-function updateFavoriteName(stopId, name) {
+function updateFavoriteName(stopId, network, name) {
   const favorites = getFavorites();
-  const fav = favorites.find((f) => f.stopId === stopId);
+  const fav = favorites.find((f) => f.stopId === stopId && favoriteNetwork(f) === network);
   if (!fav) return;
   fav.name = name || null;
   saveFavorites(favorites);
@@ -194,6 +225,7 @@ function renderFavoritesManageList() {
 }
 
 function renderFavoriteCard(fav, index, total) {
+  const network = favoriteNetwork(fav);
   const card = document.createElement('div');
   card.className = 'panel favorite-card';
 
@@ -206,7 +238,7 @@ function renderFavoriteCard(fav, index, total) {
   nameInput.value = fav.name || '';
   nameInput.placeholder = `Parada ${fav.stopId}`;
   nameInput.setAttribute('aria-label', `Nombre de la parada ${fav.stopId}`);
-  nameInput.addEventListener('change', () => updateFavoriteName(fav.stopId, nameInput.value.trim()));
+  nameInput.addEventListener('change', () => updateFavoriteName(fav.stopId, network, nameInput.value.trim()));
   nameInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') nameInput.blur();
   });
@@ -236,7 +268,7 @@ function renderFavoriteCard(fav, index, total) {
   removeBtn.textContent = '×';
   removeBtn.setAttribute('aria-label', `Quitar ${fav.name || fav.stopId} de favoritos`);
   removeBtn.addEventListener('click', () => {
-    removeFavorite(fav.stopId);
+    removeFavorite(fav.stopId, network);
     renderFavoritesManageList();
     updateFavoriteBtn();
   });
@@ -247,8 +279,18 @@ function renderFavoriteCard(fav, index, total) {
   const meta = document.createElement('div');
   meta.className = 'favorite-card__meta';
 
+  const metaLeft = document.createElement('div');
+  metaLeft.className = 'favorite-card__meta-left';
+
+  const networkEl = document.createElement('span');
+  networkEl.className = 'favorite-card__network';
+  networkEl.dataset.network = network;
+  networkEl.textContent = NETWORK_LABELS[network] ?? network;
+
   const stopIdEl = document.createElement('span');
   stopIdEl.textContent = `Parada ${fav.stopId}`;
+
+  metaLeft.append(networkEl, stopIdEl);
 
   const viewBtn = document.createElement('button');
   viewBtn.type = 'button';
@@ -257,10 +299,10 @@ function renderFavoriteCard(fav, index, total) {
   viewBtn.addEventListener('click', () => {
     favoritesOverlay.hidden = true;
     stopInput.value = fav.stopId;
-    searchStop(fav.stopId);
+    searchStop(fav.stopId, network);
   });
 
-  meta.append(stopIdEl, viewBtn);
+  meta.append(metaLeft, viewBtn);
   card.append(header, meta);
   return card;
 }
@@ -268,11 +310,11 @@ function renderFavoriteCard(fav, index, total) {
 function startAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(() => {
-    if (currentStopId) fetchArrivals(currentStopId);
+    if (currentStopId) fetchArrivals(currentStopId, currentNetwork);
   }, REFRESH_INTERVAL_MS);
 }
 
-async function fetchArrivals(stopId) {
+async function fetchArrivals(stopId, network) {
   // Solo se muestra "Buscando parada…" en la primera carga (resultsEl aún oculto). En los
   // refrescos de cada 30s (o el botón ↻) el panel ya está visible con datos: mostrar y
   // ocultar ese aviso en cada vuelta es lo que producía el salto arriba-abajo del panel.
@@ -280,7 +322,8 @@ async function fetchArrivals(stopId) {
   if (isFirstLoad) showStatus('Buscando parada…', 'loading');
 
   try {
-    const res = await fetch(`/api/emt-arrives?stopId=${encodeURIComponent(stopId)}`);
+    const endpoint = network === 'crtm' ? '/api/crtm-arrives' : '/api/emt-arrives';
+    const res = await fetch(`${endpoint}?stopId=${encodeURIComponent(stopId)}`);
     const payload = await res.json();
 
     if (!res.ok) {
@@ -288,10 +331,15 @@ async function fetchArrivals(stopId) {
     }
 
     if (payload.code && payload.code !== '00') {
-      throw new Error(payload.description || 'La API de EMT devolvió un error');
+      throw new Error(payload.description || `La API de ${NETWORK_LABELS[network]} devolvió un error`);
     }
 
-    renderArrivals(payload);
+    const normalized = network === 'crtm' ? normalizeCrtm(payload) : normalizeEmt(payload);
+    if (!normalized) {
+      throw new Error('La API no devolvió datos para esta parada.');
+    }
+
+    renderArrivals(normalized, network);
   } catch (err) {
     if (isFirstLoad) {
       showStatus(`No se pudo obtener la parada ${stopId}: ${err.message}`, 'error');
@@ -304,27 +352,33 @@ async function fetchArrivals(stopId) {
   }
 }
 
-function renderArrivals(payload) {
+// Ambas redes se reducen a la misma forma { stopName, arrivals: [{line, destination,
+// estimateArrive, DistanceBus?}] } para que el resto del pintado no tenga que saber de
+// dónde vino cada dato.
+function normalizeEmt(payload) {
   const stopData = payload.data?.[0];
-  if (!stopData) {
-    showStatus('La API no devolvió datos para esta parada.', 'error');
-    resultsEl.hidden = true;
-    return;
-  }
-
+  if (!stopData) return null;
   const stopInfo = stopData.StopInfo?.[0];
-  const arrivals = stopData.Arrive ?? [];
+  return { stopName: stopInfo?.stopName || null, arrivals: stopData.Arrive ?? [] };
+}
 
-  currentStopName = stopInfo?.stopName || null;
+function normalizeCrtm(payload) {
+  return { stopName: payload.stopName || null, arrivals: payload.arrivals ?? [] };
+}
+
+function renderArrivals(normalized, network) {
+  const { stopName, arrivals } = normalized;
+
+  currentStopName = stopName;
   stopNameEl.textContent = currentStopName
     ? `${currentStopName} (parada ${currentStopId})`
     : `Parada ${currentStopId}`;
 
   // Si esta parada ya estaba en favoritos sin nombre (se guardó antes de tener este dato),
   // se completa en silencio la próxima vez que se consulta.
-  if (currentStopName && isFavorite(currentStopId)) {
+  if (currentStopName && isFavorite(currentStopId, network)) {
     const favorites = getFavorites();
-    const fav = favorites.find((f) => f.stopId === currentStopId);
+    const fav = favorites.find((f) => f.stopId === currentStopId && favoriteNetwork(f) === network);
     if (fav && !fav.name) {
       fav.name = currentStopName;
       saveFavorites(favorites);
@@ -343,7 +397,7 @@ function renderArrivals(payload) {
   } else {
     const sorted = [...arrivals].sort((a, b) => a.estimateArrive - b.estimateArrive);
     for (const arrival of sorted) {
-      arrivalsListEl.appendChild(renderArrivalItem(arrival));
+      arrivalsListEl.appendChild(renderArrivalItem(arrival, network));
     }
   }
 
@@ -352,7 +406,7 @@ function renderArrivals(payload) {
   resultsEl.hidden = false;
 }
 
-function renderArrivalItem(arrival) {
+function renderArrivalItem(arrival, network) {
   const li = document.createElement('li');
   li.className = 'arrival-item';
 
@@ -365,12 +419,16 @@ function renderArrivalItem(arrival) {
   destination.textContent = arrival.destination;
 
   const eta = document.createElement('span');
-  eta.className = `arrival-item__eta ${etaClass(arrival.estimateArrive)}`;
-  eta.textContent = formatEta(arrival.estimateArrive);
+  eta.className = `arrival-item__eta ${etaClass(arrival.estimateArrive, network)}`;
+  eta.textContent = formatEta(arrival.estimateArrive, network);
 
   const distance = document.createElement('span');
   distance.className = 'arrival-item__distance';
-  if (hasReliableEta(arrival.estimateArrive)) {
+  if (network === 'crtm') {
+    // CRTM no da posición/distancia en vivo del bus en este endpoint, y su estimateArrive
+    // ya es siempre un dato utilizable (no hay sentinel de "sin datos" que rellenar).
+    distance.textContent = '';
+  } else if (hasReliableEta(arrival.estimateArrive, network)) {
     // Sin ETA fiable no hay posición real del bus; DistanceBus no es un dato útil en ese caso.
     distance.textContent = formatDistance(arrival.DistanceBus);
   } else {
@@ -432,20 +490,28 @@ function isServiceActive(nowMin, startMin, stopMin) {
 // pero en la práctica las líneas nocturnas (N-) a veces devuelven valores absurdos en vez de ese
 // sentinel cuando no hay GPS en tiempo real (p.ej. "14815 min" en vez de 999999). Cualquier
 // estimación por encima de 90 min es igual de poco fiable, la trituremos o no como sentinel exacto.
+// CRTM no tiene nada parecido: su estimateArrive siempre es una hora de paso real, calculada
+// aquí mismo a partir de un timestamp — puede ser legítimamente de varias horas (p.ej. el
+// primer bus de la mañana consultado de madrugada), así que este límite no se le aplica.
 const MAX_RELIABLE_ETA_SECONDS = 90 * 60;
 
-function hasReliableEta(seconds) {
-  return typeof seconds === 'number' && seconds <= MAX_RELIABLE_ETA_SECONDS;
+function hasReliableEta(seconds, network) {
+  if (typeof seconds !== 'number') return false;
+  if (network === 'crtm') return true;
+  return seconds <= MAX_RELIABLE_ETA_SECONDS;
 }
 
-function formatEta(seconds) {
-  if (!hasReliableEta(seconds)) return 'Sin estimación';
+function formatEta(seconds, network) {
+  if (!hasReliableEta(seconds, network)) return 'Sin estimación';
   if (seconds < 60) return 'Llegando';
-  return `${Math.round(seconds / 60)} min`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+  return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
 }
 
-function etaClass(seconds) {
-  if (!hasReliableEta(seconds)) return 'eta-unknown';
+function etaClass(seconds, network) {
+  if (!hasReliableEta(seconds, network)) return 'eta-unknown';
   if (seconds < 60) return 'eta-now';
   if (seconds < 300) return 'eta-soon';
   return '';
@@ -471,11 +537,12 @@ function hideStatus() {
   statusEl.hidden = true;
 }
 
-// Recupera la última parada consultada para no partir de cero.
+// Recupera la última parada (y red) consultada para no partir de cero.
+setNetwork(localStorage.getItem(LAST_NETWORK_STORAGE_KEY) || 'emt');
 const lastStopId = localStorage.getItem(LAST_STOP_STORAGE_KEY);
 if (lastStopId) {
   stopInput.value = lastStopId;
-  searchStop(lastStopId);
+  searchStop(lastStopId, currentNetwork);
 }
 
 // Cachea el shell de la app (ver sw.js) para que la PWA instalada cargue al instante y

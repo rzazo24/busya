@@ -33,6 +33,10 @@
 
   <main>
     <form id="stop-form" class="stop-form" autocomplete="off">
+      <div class="network-toggle" role="tablist" aria-label="Red de transporte">
+        <button type="button" class="network-toggle__btn active" data-network="emt" role="tab" aria-selected="true">EMT Madrid</button>
+        <button type="button" class="network-toggle__btn" data-network="crtm" role="tab" aria-selected="false">Interurbano</button>
+      </div>
       <label for="stop-id">Número de parada</label>
       <div class="stop-form__row">
         <input
@@ -69,7 +73,9 @@
       <h2 class="panel-title">Ayuda</h2>
       <div class="help-content">
         <h3>Buscar una parada</h3>
-        <p>Introduce el número de parada de EMT Madrid (está en el poste de la marquesina) y pulsa Buscar. Los tiempos se refrescan solos cada 30 s.</p>
+        <p>Elige la red (EMT Madrid o Interurbano) e introduce el número de parada tal como
+        aparece en el poste — cada red tiene su propia numeración, un mismo número no es la
+        misma parada en ambas. Los tiempos se refrescan solos cada 30 s.</p>
         <h3>Colores del tiempo de llegada</h3>
         <p><span class="legend-dot eta-now"></span> menos de 1 min · <span class="legend-dot eta-soon"></span> menos de 5 min · <span class="legend-dot"></span> 5 min o más</p>
         <p>Cuando una línea no tiene tiempo real fiable (frecuente de madrugada), se muestra en su lugar la frecuencia de servicio programada.</p>
