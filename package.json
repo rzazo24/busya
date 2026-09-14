@@ -1,6 +1,6 @@
 {
   "name": "busya",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "description": "Tiempos de paso en tiempo real de los buses urbanos de EMT Madrid",

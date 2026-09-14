@@ -104,7 +104,7 @@ otra parada distinta sin más contexto sería confuso, no útil.
 
 ## Estado de las APIs
 
-El botón 📶 de la cabecera abre un panel que mide en directo cuánto tarda en responder cada
+El botón ⓘ de la cabecera abre un panel que mide en directo cuánto tarda en responder cada
 API (EMT, Interurbano/CRTM y paradas cercanas) — útil para distinguir si un tiempo raro es
 cosa de la app o de la propia API en ese momento. Solo comprueba al abrir el panel o al pulsar
 "Comprobar de nuevo", nunca en segundo plano.
