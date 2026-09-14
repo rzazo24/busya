@@ -3,6 +3,10 @@ const LAST_STOP_STORAGE_KEY = 'busya:lastStopId';
 const LAST_NETWORK_STORAGE_KEY = 'busya:lastNetwork';
 const FAVORITES_STORAGE_KEY = 'busya:favorites';
 const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
+// Solo para el badge de red en las tarjetas de favoritos: ahí "CRTM" es más compacto que
+// "Interurbano" y ya lo reconoce quien mira esa lista. El toggle del buscador y los mensajes
+// de error siguen diciendo "Interurbano", más claro para quien no sepa qué es CRTM.
+const FAVORITE_NETWORK_LABELS = { emt: 'EMT', crtm: 'CRTM' };
 
 const form = document.getElementById('stop-form');
 const stopInput = document.getElementById('stop-id');
@@ -293,7 +297,7 @@ function renderFavoriteCard(fav, index, total) {
   const networkEl = document.createElement('span');
   networkEl.className = 'favorite-card__network';
   networkEl.dataset.network = network;
-  networkEl.textContent = NETWORK_LABELS[network] ?? network;
+  networkEl.textContent = FAVORITE_NETWORK_LABELS[network] ?? network;
 
   const stopIdEl = document.createElement('span');
   stopIdEl.textContent = `Parada ${fav.stopId}`;
