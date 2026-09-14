@@ -61,25 +61,73 @@ favoriteBtn.addEventListener('click', () => {
   updateFavoriteBtn();
 });
 
-helpOpenBtn.addEventListener('click', () => { helpOverlay.hidden = false; });
-helpCloseBtn.addEventListener('click', () => { helpOverlay.hidden = true; });
-helpOverlay.addEventListener('click', (event) => {
-  if (event.target === helpOverlay) helpOverlay.hidden = true;
-});
+// En táctil (sobre todo iOS/PWA), un overlay position:fixed no basta para impedir que un
+// gesto de scroll se "cuele" y mueva la página de detrás en vez del contenido del modal —
+// justo lo reportado: el fondo se desplaza en vez de las tarjetas de favoritos. Se fija el
+// body en su sitio mientras haya algún overlay abierto, y se restaura el scroll exacto al
+// cerrar. Contador en vez de un booleano por si algún día hay más de un overlay a la vez.
+let lockedScrollY = 0;
+let openOverlayCount = 0;
 
-favoritesOpenBtn.addEventListener('click', () => {
+function lockBodyScroll() {
+  if (openOverlayCount === 0) {
+    lockedScrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${lockedScrollY}px`;
+    document.body.style.width = '100%';
+  }
+  openOverlayCount++;
+}
+
+function unlockBodyScroll() {
+  openOverlayCount = Math.max(0, openOverlayCount - 1);
+  if (openOverlayCount === 0) {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    window.scrollTo(0, lockedScrollY);
+  }
+}
+
+function openHelp() {
+  helpOverlay.hidden = false;
+  lockBodyScroll();
+}
+
+function closeHelp() {
+  if (helpOverlay.hidden) return;
+  helpOverlay.hidden = true;
+  unlockBodyScroll();
+}
+
+function openFavorites() {
   renderFavoritesManageList();
   favoritesOverlay.hidden = false;
+  lockBodyScroll();
+}
+
+function closeFavorites() {
+  if (favoritesOverlay.hidden) return;
+  favoritesOverlay.hidden = true;
+  unlockBodyScroll();
+}
+
+helpOpenBtn.addEventListener('click', openHelp);
+helpCloseBtn.addEventListener('click', closeHelp);
+helpOverlay.addEventListener('click', (event) => {
+  if (event.target === helpOverlay) closeHelp();
 });
-favoritesCloseBtn.addEventListener('click', () => { favoritesOverlay.hidden = true; });
+
+favoritesOpenBtn.addEventListener('click', openFavorites);
+favoritesCloseBtn.addEventListener('click', closeFavorites);
 favoritesOverlay.addEventListener('click', (event) => {
-  if (event.target === favoritesOverlay) favoritesOverlay.hidden = true;
+  if (event.target === favoritesOverlay) closeFavorites();
 });
 
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
-  if (!helpOverlay.hidden) helpOverlay.hidden = true;
-  if (!favoritesOverlay.hidden) favoritesOverlay.hidden = true;
+  closeHelp();
+  closeFavorites();
 });
 
 function setNetwork(network) {
@@ -309,7 +357,7 @@ function renderFavoriteCard(fav, index, total) {
   viewBtn.className = 'favorite-card__view';
   viewBtn.textContent = 'Ver tiempos →';
   viewBtn.addEventListener('click', () => {
-    favoritesOverlay.hidden = true;
+    closeFavorites();
     stopInput.value = fav.stopId;
     searchStop(fav.stopId, network);
   });
