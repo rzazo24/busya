@@ -13,6 +13,18 @@ const CRTM_BASE = 'https://www.crtm.es/widgets/api';
 // 9=urbanos de otros municipios, 10=Metro Ligero/Tranvía). Verificado contra la API real.
 const INTERURBAN_MODE = '8';
 
+// Probado en vivo: la mayoría de las llamadas a CRTM tardan 300-900ms, pero de vez en cuando
+// una se cuelga varios segundos (una vez, 21s en total para una sola búsqueda). Sin límite,
+// una sola llamada colgada arrastra todo el Promise.all y puede superar los 10s de
+// maxDuration de la función en Vercel, tirando abajo una búsqueda que por lo demás iba bien.
+// Con esto, esa llamada concreta simplemente no da distancia (igual que "sin bus circulando")
+// en vez de romper toda la respuesta.
+const FETCH_TIMEOUT_MS = 2500;
+
+function fetchWithTimeout(url) {
+  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+}
+
 function buildCodStop(stopId) {
   // Los ceros a la izquierda son parte del identificador real, no relleno cosmético
   // (probado en vivo: codStop=8_6002 devuelve error, 8_06002 funciona) — se usa el número
@@ -29,7 +41,7 @@ function buildCodStop(stopId) {
 // carreteras con curvas — más aproximada que el DistanceBus real de EMT.
 async function fetchStopCoordinates(codStop) {
   try {
-    const res = await fetch(`${CRTM_BASE}/GetStops.php?codStop=${encodeURIComponent(codStop)}`);
+    const res = await fetchWithTimeout(`${CRTM_BASE}/GetStops.php?codStop=${encodeURIComponent(codStop)}`);
     if (!res.ok) return null;
     const data = await res.json();
     const stop = data.stops?.Stop;
@@ -41,7 +53,7 @@ async function fetchStopCoordinates(codStop) {
 }
 
 async function fetchItineraryCode(codLine, direction) {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${CRTM_BASE}/GetLinesInformation.php?activeItinerary=1&codLine=${encodeURIComponent(codLine)}`
   );
   if (!res.ok) return null;
@@ -74,7 +86,7 @@ async function fetchVehicleDistanceMeters(codLine, direction, codStop, stopCoord
     const url =
       `${CRTM_BASE}/GetLineLocation.php?mode=${INTERURBAN_MODE}&codItinerary=${encodeURIComponent(codItinerary)}` +
       `&codLine=${encodeURIComponent(codLine)}&codStop=${encodeURIComponent(codStop)}&direction=${direction}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url);
     if (!res.ok) return null;
 
     const data = await res.json();
@@ -121,7 +133,11 @@ export default async function handler(req, res) {
     const codStop = buildCodStop(stopId);
     const url = `${CRTM_BASE}/GetStopsTimes.php?codStop=${encodeURIComponent(codStop)}&type=0&orderBy=2&stopTimesByIti=`;
 
-    const crtmRes = await fetch(url);
+    // Las coordenadas de la parada no dependen en nada del resultado de GetStopsTimes (solo
+    // hace falta el codStop, que ya se tiene) — se piden en paralelo en vez de encadenadas,
+    // para no sumar su latencia a la del resto de llamadas (itinerario + posición) de abajo.
+    const [crtmRes, stopCoords] = await Promise.all([fetchWithTimeout(url), fetchStopCoordinates(codStop)]);
+
     if (!crtmRes.ok) {
       throw new Error(`CRTM respondió con status ${crtmRes.status}`);
     }
@@ -146,7 +162,6 @@ export default async function handler(req, res) {
     const rawTimes = stopTimes.times?.Time;
     const timesList = Array.isArray(rawTimes) ? rawTimes : rawTimes ? [rawTimes] : [];
 
-    const stopCoords = await fetchStopCoordinates(codStop);
     const distanceByLine = await fetchDistancesByLine(timesList, codStop, stopCoords);
 
     const arrivals = timesList.map((t) => ({
