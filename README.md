@@ -129,7 +129,8 @@ busya/
 ├── .env.example
 ├── vercel.json
 ├── LICENSE
-└── package.json
+├── package.json
+└── package-lock.json
 ```
 
 ## Desarrollo local
