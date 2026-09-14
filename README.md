@@ -102,6 +102,13 @@ desactualizado. Se limpia solo en el siguiente refresco que funcione. Si en camb
 una parada distinta y esa falla, sí se avisa como error de verdad: dejar puestos los datos de
 otra parada distinta sin más contexto sería confuso, no útil.
 
+## Analíticas
+
+Vercel Web Analytics (visitas y Core Web Vitals, sin cookies ni datos personales) mediante
+la integración por `<script>` para sitios sin framework — no necesita instalar ningún
+paquete. Hace falta activarlo también en el dashboard del proyecto en Vercel (Analytics →
+Enable) para que empiece a recoger datos.
+
 ## Estructura
 
 ```

@@ -66,7 +66,14 @@ try {
     withPage(async (page) => {
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
-      page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+      page.on('console', (m) => {
+        // El script de Vercel Web Analytics (/_vercel/insights/script.js) solo existe en un
+        // despliegue real con Analytics activado en el dashboard — aquí, contra el servidor
+        // de pruebas, da 404 a propósito; no es un fallo de la app. El texto del mensaje no
+        // lleva la URL (es siempre el mismo genérico "Failed to load resource..."), así que
+        // hay que mirar location().url para identificarlo.
+        if (m.type() === 'error' && !m.location().url.includes('/_vercel/insights/script.js')) errors.push(m.text());
+      });
       await page.goto(baseUrl);
       await page.waitForLoadState('load');
       if (errors.length) throw new Error(errors.join(' | '));

@@ -129,5 +129,13 @@
   </div>
 
   <script src="js/app.js"></script>
+  <!-- Vercel Web Analytics: solo cuenta visitas/page views y Core Web Vitals, sin cookies ni
+       datos personales. Hay que activarlo también en el dashboard del proyecto en Vercel
+       (Analytics → Enable) para que empiece a recoger datos; sin eso, este script no falla,
+       simplemente no envía nada. -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
