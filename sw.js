@@ -4,6 +4,9 @@
 // haría que la app mostrara tiempos de bus caducados sin avisar, así que solo se interceptan
 // las rutas exactas de SHELL_FILES; todo lo demás (esas dos rutas, fuentes de Google, etc.)
 // pasa de largo sin tocar la caché.
+// Va a juego con el número de versión visible en el pie de página (index.html) y con
+// "version" en package.json — los tres se suben juntos en cada despliegue con cambios
+// visibles (antes esto era un contador suelto sin relación con nada, tipo "busya-v10").
 // Subir este número es lo que avisa a quien ya tiene la app abierta/instalada de que hay una
 // versión nueva (ver el aviso "Recargar" en app.js, que depende de que este propio archivo
 // cambie de bytes — es lo único que hace que el navegador note una versión nueva del service
@@ -11,7 +14,7 @@
 // segundo plano sin necesidad de subir esto, pero entonces nadie se entera del cambio hasta
 // la siguiente vez que abra la app de cero: subir la versión aquí en cada despliegue con
 // cambios visibles es lo que hace que salga el aviso.
-const CACHE_NAME = 'busya-v10';
+const CACHE_NAME = 'busya-v1.0.0';
 const SHELL_FILES = [
   '/',
   '/index.html',
