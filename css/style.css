@@ -314,6 +314,14 @@ main {
   padding: 0;
 }
 
+/* Un <svg> es "inline" por defecto y se alinea a la línea base como si fuera texto — el
+   propio botón ya lo centra con flexbox, pero ese comportamiento de línea base puede
+   desplazarlo unos píxeles verticalmente según el motor de renderizado (visto: bien en
+   Chromium de escritorio, descentrado en móvil). display:block lo saca de ese cálculo. */
+.help-btn svg {
+  display: block;
+}
+
 .arrivals-list {
   list-style: none;
   margin: 14px 0 0;
