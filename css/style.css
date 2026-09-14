@@ -13,6 +13,9 @@
      de interurbanos ya es --accent (el acento base de toda la app), así que solo hace
      falta un azul nuevo para EMT. */
   --blue: #3ea6f2;
+  /* Dorado reservado para "línea favorita" — distinto del --orange de aviso de ETA, para
+     no mezclar "esta línea me interesa" con "este bus está a punto de llegar". */
+  --gold: #ffd166;
   --font: 'IBM Plex Mono', monospace;
 }
 
@@ -324,12 +327,33 @@ main {
   color: #06170a;
   font-weight: 700;
   font-size: 14px;
+  /* Es un <button> (para poder marcar la línea como favorita), no un <span>: se resetean
+     los estilos por defecto de botón para que siga pareciendo la misma pastilla de antes. */
+  position: relative;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .arrival-item__line--emt {
   /* Azul: color real de los buses urbanos de EMT en Madrid. */
   background: var(--blue);
   color: #001830;
+}
+
+.arrival-item__line--favorite {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 6px var(--gold);
+}
+
+.arrival-item__line--favorite::after {
+  content: '★';
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 4px var(--gold);
 }
 
 .arrival-item__destination {
@@ -644,6 +668,10 @@ main {
 
   .panel-close:hover {
     color: var(--text);
+  }
+
+  .arrival-item__line:not(.arrival-item__line--favorite):hover {
+    box-shadow: 0 0 0 2px var(--text-dim);
   }
 }
 

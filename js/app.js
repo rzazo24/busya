@@ -2,6 +2,7 @@ const REFRESH_INTERVAL_MS = 30_000;
 const LAST_STOP_STORAGE_KEY = 'busya:lastStopId';
 const LAST_NETWORK_STORAGE_KEY = 'busya:lastNetwork';
 const FAVORITES_STORAGE_KEY = 'busya:favorites';
+const FAVORITE_LINES_STORAGE_KEY = 'busya:favoriteLines';
 const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 // Solo para el badge de red en las tarjetas de favoritos: ahí "CRTM" es más compacto que
 // "Interurbano" y ya lo reconoce quien mira esa lista. El toggle del buscador y los mensajes
@@ -39,6 +40,10 @@ let currentNetwork = 'emt';
 let stopSchedule = null; // Map<línea, {startTime, stopTime, minFreq, maxFreq}>
 let stopScheduleStopId = null;
 let stopScheduleName = null; // Nombre real de la parada, por si /arrives/ no lo da (ver renderArrivals)
+
+// Últimas llegadas ya normalizadas de la parada actual, para poder reordenar/resaltar al
+// marcar una línea como favorita sin volver a pedir datos a la API.
+let lastArrivals = [];
 
 networkToggleBtns.forEach((btn) => {
   btn.addEventListener('click', () => setNetwork(btn.dataset.network));
@@ -272,6 +277,40 @@ function moveFavorite(index, direction) {
   renderFavoritesManageList();
 }
 
+// Líneas favoritas: igual que las paradas, solo en localStorage y por red — un "27" de EMT
+// y un "27" de Interurbano son líneas distintas. Se guardan aparte de las paradas favoritas
+// porque una línea puede marcarse como favorita en cualquier parada donde aparezca, no solo
+// en las paradas guardadas.
+function getFavoriteLines() {
+  try {
+    const raw = localStorage.getItem(FAVORITE_LINES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoriteLines(list) {
+  localStorage.setItem(FAVORITE_LINES_STORAGE_KEY, JSON.stringify(list));
+}
+
+function isFavoriteLine(line, network) {
+  const key = String(line);
+  return getFavoriteLines().some((fav) => fav.line === key && fav.network === network);
+}
+
+function toggleFavoriteLine(line, network) {
+  const favorites = getFavoriteLines();
+  const key = String(line);
+  const index = favorites.findIndex((fav) => fav.line === key && fav.network === network);
+  if (index >= 0) {
+    favorites.splice(index, 1);
+  } else {
+    favorites.push({ line: key, network });
+  }
+  saveFavoriteLines(favorites);
+}
+
 // Panel de favoritos: una tarjeta por parada (mismo estilo que el panel de resultados),
 // independiente del buscador — se abre desde la topbar, con nombre editable y orden propio.
 function renderFavoritesManageList() {
@@ -463,6 +502,15 @@ function renderArrivals(normalized, network) {
 
   updateFavoriteBtn();
 
+  lastArrivals = arrivals;
+  renderArrivalsList(arrivals, network);
+
+  lastUpdatedEl.textContent = `Actualizado ${formatTime(new Date())}`;
+  hideStatus();
+  resultsEl.hidden = false;
+}
+
+function renderArrivalsList(arrivals, network) {
   arrivalsListEl.innerHTML = '';
 
   if (arrivals.length === 0) {
@@ -471,26 +519,41 @@ function renderArrivals(normalized, network) {
     li.textContent = 'No hay buses en camino ahora mismo.';
     arrivalsListEl.appendChild(li);
   } else {
-    const sorted = [...arrivals].sort((a, b) => a.estimateArrive - b.estimateArrive);
+    // Las líneas favoritas suben al principio (para que "destaquen", que es justo lo que
+    // se pidió); dentro de cada grupo se mantiene el orden por ETA de siempre.
+    const sorted = [...arrivals].sort((a, b) => {
+      const aFav = isFavoriteLine(a.line, network);
+      const bFav = isFavoriteLine(b.line, network);
+      if (aFav !== bFav) return aFav ? -1 : 1;
+      return a.estimateArrive - b.estimateArrive;
+    });
     for (const arrival of sorted) {
       arrivalsListEl.appendChild(renderArrivalItem(arrival, network));
     }
   }
-
-  lastUpdatedEl.textContent = `Actualizado ${formatTime(new Date())}`;
-  hideStatus();
-  resultsEl.hidden = false;
 }
 
 function renderArrivalItem(arrival, network) {
   const li = document.createElement('li');
   li.className = 'arrival-item';
 
-  const line = document.createElement('span');
+  const lineIsFavorite = isFavoriteLine(arrival.line, network);
+  const line = document.createElement('button');
+  line.type = 'button';
   // Azul para EMT, verde para interurbanos — el mismo código de color de los buses reales
   // en Madrid (verde ya es el acento por defecto de la app, así que solo EMT necesita clase).
-  line.className = network === 'emt' ? 'arrival-item__line arrival-item__line--emt' : 'arrival-item__line';
+  line.className = [
+    'arrival-item__line',
+    network === 'emt' ? 'arrival-item__line--emt' : '',
+    lineIsFavorite ? 'arrival-item__line--favorite' : '',
+  ].filter(Boolean).join(' ');
   line.textContent = arrival.line;
+  line.setAttribute('aria-pressed', String(lineIsFavorite));
+  line.title = lineIsFavorite ? 'Quitar la línea de favoritas' : 'Marcar la línea como favorita';
+  line.addEventListener('click', () => {
+    toggleFavoriteLine(arrival.line, network);
+    renderArrivalsList(lastArrivals, network);
+  });
 
   const destination = document.createElement('span');
   destination.className = 'arrival-item__destination';
