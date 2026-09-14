@@ -34,6 +34,7 @@ let currentNetwork = 'emt';
 // se pide una sola vez por parada, no en cada refresco de 30s.
 let stopSchedule = null; // Map<línea, {startTime, stopTime, minFreq, maxFreq}>
 let stopScheduleStopId = null;
+let stopScheduleName = null; // Nombre real de la parada, por si /arrives/ no lo da (ver renderArrivals)
 
 networkToggleBtns.forEach((btn) => {
   btn.addEventListener('click', () => setNetwork(btn.dataset.network));
@@ -114,6 +115,11 @@ async function ensureStopSchedule(stopId) {
     const stop = payload.data?.[0]?.stops?.[0];
     const lines = stop?.dataLine ?? [];
     const today = dayTypeForToday();
+
+    // /transport/busemtmad/stops/{id}/detail/ es un endpoint distinto al de tiempos de paso
+    // (/arrives/): sigue dando el nombre real aunque ese otro falle con "No estimations
+    // found" — ver renderArrivals, que lo usa como respaldo cuando /arrives/ no trae nombre.
+    stopScheduleName = stop?.name || null;
 
     const byLine = new Map();
     for (const line of lines) {
@@ -380,9 +386,14 @@ function normalizeCrtm(payload) {
 }
 
 function renderArrivals(normalized, network) {
-  const { stopName, arrivals } = normalized;
+  const { arrivals } = normalized;
 
-  currentStopName = stopName;
+  // /api/emt-arrives a veces no trae nombre (p.ej. "No estimations found": la otra app
+  // también muestra el nombre real ahí, en vez de "Parada X"). /api/emt-stop-detail es un
+  // endpoint distinto que sigue dando el nombre aunque ese falle, así que se usa como
+  // respaldo cuando está disponible para esta misma parada.
+  const fallbackName = network === 'emt' && stopScheduleStopId === currentStopId ? stopScheduleName : null;
+  currentStopName = normalized.stopName || fallbackName;
   stopNameEl.textContent = currentStopName
     ? `${currentStopName} (parada ${currentStopId})`
     : `Parada ${currentStopId}`;
