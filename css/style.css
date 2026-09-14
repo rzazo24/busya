@@ -430,16 +430,17 @@ main {
   width: 100%;
   max-width: 460px;
   max-height: 82vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* Da aire para el scrollbar y para que la última tarjeta no quede pegada al borde. */
   padding: 2px 2px 4px;
 }
 
+/* flex-shrink: 0 para que la cabecera (con el botón de cerrar) se quede fija y no
+   comparta scroll con la lista de abajo — si no, la barra de scroll atraviesa la
+   cabecera y se pisa con el botón ✕. */
 .favorites-modal__header {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -456,6 +457,12 @@ main {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Da aire para el scrollbar y para que la última tarjeta no quede pegada al borde. */
+  padding-right: 4px;
 }
 
 /* .favorite-card reutiliza .panel (fondo, borde, radio, sombra) — cada favorito es su
