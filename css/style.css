@@ -517,16 +517,19 @@ main {
 
 .favorite-card__network {
   font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   padding: 2px 6px;
   border-radius: 8px;
-  border: 1px solid var(--grid);
-  color: var(--accent);
+  /* Relleno, no solo borde — mismo estilo que los badges de línea de la lista de llegadas. */
+  background: var(--accent);
+  color: #06170a;
 }
 
 .favorite-card__network[data-network="emt"] {
-  color: var(--blue);
+  background: var(--blue);
+  color: #001830;
 }
 
 .favorite-card__view {
