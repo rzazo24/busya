@@ -23,8 +23,20 @@ const INTERURBAN_MODE = '8';
 // en vez de romper toda la respuesta.
 const FETCH_TIMEOUT_MS = 2500;
 
-function fetchWithTimeout(url) {
-  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+// GetStopsTimes (los tiempos de paso en sí) es la única llamada sin la que no hay respuesta
+// posible — a diferencia de las de distancia, que ya degradan solas a "sin distancia" si
+// fallan. Recibido en producción "No se pudo obtener información de CRTM" con paradas reales
+// que, probadas a mano justo después, respondían bien en ~1s: la propia GetStopsTimes se
+// cuelga a veces más que las 2.5s de arriba, y con ese límite tan corto para la llamada
+// esencial se tira la búsqueda entera por un hipo que un poco más de margen habría absorbido.
+// 5s en vez de más para no arriesgar el maxDuration:10 de vercel.json — GetStopsTimes corre
+// en paralelo con fetchStopCoordinates (2.5s), y después va la ronda de distancias (hasta
+// ~5s en el peor caso, itinerario + posición encadenados) — 5s + 5s deja algo de margen
+// dentro del límite en vez de agotarlo.
+const PRIMARY_FETCH_TIMEOUT_MS = 5000;
+
+function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
+  return fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
 }
 
 function buildCodStop(stopId) {
@@ -127,7 +139,10 @@ export default async function handler(req, res) {
     // Las coordenadas de la parada no dependen en nada del resultado de GetStopsTimes (solo
     // hace falta el codStop, que ya se tiene) — se piden en paralelo en vez de encadenadas,
     // para no sumar su latencia a la del resto de llamadas (itinerario + posición) de abajo.
-    const [crtmRes, stopCoords] = await Promise.all([fetchWithTimeout(url), fetchStopCoordinates(codStop)]);
+    const [crtmRes, stopCoords] = await Promise.all([
+      fetchWithTimeout(url, PRIMARY_FETCH_TIMEOUT_MS),
+      fetchStopCoordinates(codStop),
+    ]);
 
     if (!crtmRes.ok) {
       throw new Error(`CRTM respondió con status ${crtmRes.status}`);
