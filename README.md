@@ -59,7 +59,7 @@ recta entre dos coordenadas GPS, no la ruta real): se calcula con una llamada ad
 
 ## Paradas cercanas
 
-"📍 Buscar paradas cerca de mí" pide permiso de ubicación al navegador y muestra las paradas
+"Buscar paradas cerca de mí" pide permiso de ubicación al navegador y muestra las paradas
 de las dos redes a menos de 300 m, ordenadas por distancia, con sus líneas — toca una para ver
 sus tiempos. El backend (`api/nearby-stops.js`) reutiliza el propio agregador de CRTM
 (`GetNearestStopsByLocation.php`), que también indexa las paradas de EMT: no hace falta un

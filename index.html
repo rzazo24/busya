@@ -26,9 +26,9 @@
     </div>
     <p class="subtitle">Buses EMT y CRTM</p>
     <div class="topbar-actions">
-      <button id="favorites-open" class="help-btn favorites-open-btn" type="button" aria-label="Favoritos">♥</button>
-      <button id="api-status-open" class="help-btn" type="button" aria-label="Estado de las APIs">ⓘ</button>
-      <button id="help-open" class="help-btn" type="button" aria-label="Ayuda">?</button>
+      <button id="favorites-open" class="help-btn favorites-open-btn" type="button" aria-label="Favoritos"></button>
+      <button id="api-status-open" class="help-btn" type="button" aria-label="Estado de las APIs"></button>
+      <button id="help-open" class="help-btn" type="button" aria-label="Ayuda"></button>
     </div>
   </header>
 
@@ -53,12 +53,12 @@
       </div>
     </form>
 
-    <button id="nearby-btn" type="button" class="nearby-btn">📍 Buscar paradas cerca de mí</button>
+    <button id="nearby-btn" type="button" class="nearby-btn"><span id="nearby-btn-icon" class="nearby-btn__icon"></span> Buscar paradas cerca de mí</button>
 
     <section id="status" class="status" aria-live="polite" hidden></section>
 
     <section id="nearby-results" class="panel nearby-results" hidden>
-      <button id="nearby-close" class="panel-close" type="button" aria-label="Cerrar paradas cercanas">✕</button>
+      <button id="nearby-close" class="panel-close" type="button" aria-label="Cerrar paradas cercanas"></button>
       <h2 class="panel-title">Paradas cercanas</h2>
       <ul id="nearby-list" class="nearby-list"></ul>
     </section>
@@ -68,17 +68,9 @@
         <h2 id="stop-name" class="panel-title">Parada</h2>
         <div class="results__meta">
           <span id="last-updated"></span>
-          <button id="favorite-btn" class="help-btn" type="button" title="Guardar como favorita" aria-label="Guardar como favorita">♡</button>
-          <button id="share-btn" class="help-btn" type="button" title="Compartir esta parada" aria-label="Compartir esta parada">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <line x1="7.5" y1="12" x2="16.5" y2="6"></line>
-              <line x1="7.5" y1="12" x2="16.5" y2="18"></line>
-              <circle cx="6" cy="12" r="2.5" fill="currentColor" stroke="none"></circle>
-              <circle cx="18" cy="6" r="2.5" fill="currentColor" stroke="none"></circle>
-              <circle cx="18" cy="18" r="2.5" fill="currentColor" stroke="none"></circle>
-            </svg>
-          </button>
-          <button id="refresh-btn" class="help-btn" type="button" title="Actualizar ahora" aria-label="Actualizar">↻</button>
+          <button id="favorite-btn" class="help-btn" type="button" title="Guardar como favorita" aria-label="Guardar como favorita"></button>
+          <button id="share-btn" class="help-btn" type="button" title="Compartir esta parada" aria-label="Compartir esta parada"></button>
+          <button id="refresh-btn" class="help-btn" type="button" title="Actualizar ahora" aria-label="Actualizar"></button>
         </div>
       </div>
       <ul id="arrivals-list" class="arrivals-list"></ul>
@@ -87,7 +79,7 @@
 
   <div id="help-overlay" class="help-overlay" hidden>
     <div class="panel help-panel" role="dialog" aria-modal="true" aria-labelledby="help-title">
-      <button id="help-close" class="panel-close" type="button" aria-label="Cerrar ayuda">✕</button>
+      <button id="help-close" class="panel-close" type="button" aria-label="Cerrar ayuda"></button>
       <h2 id="help-title" class="panel-title">Ayuda</h2>
       <div class="help-content">
         <h3>Buscar una parada</h3>
@@ -97,7 +89,7 @@
         verde, el mismo color que llevan esos autobuses en la calle. Los tiempos se
         refrescan solos cada 30 s. Si en algún refresco falla la conexión, se mantienen los
         últimos tiempos en pantalla con el aviso "Sin conexión" en vez de borrarlos.</p>
-        <p>Si no conoces el número, "📍 Buscar paradas cerca de mí" muestra las paradas de
+        <p>Si no conoces el número, "Buscar paradas cerca de mí" muestra las paradas de
         las dos redes a menos de 300 m de tu ubicación (pide permiso de ubicación al
         navegador), con sus líneas y distancia — toca una para ver sus tiempos.</p>
         <p>La dirección de la página siempre lleva la parada que estás viendo, así que puedes
@@ -128,7 +120,7 @@
     <div class="favorites-modal" role="dialog" aria-modal="true" aria-labelledby="favorites-title">
       <div class="favorites-modal__header">
         <h2 id="favorites-title" class="panel-title">Favoritos</h2>
-        <button id="favorites-close" class="help-btn" type="button" aria-label="Cerrar favoritos">✕</button>
+        <button id="favorites-close" class="help-btn" type="button" aria-label="Cerrar favoritos"></button>
       </div>
       <p id="favorites-empty" class="favorites-empty" hidden>Aún no tienes paradas favoritas. Pulsa ♡ junto a una parada para guardarla.</p>
       <div id="favorites-manage-list" class="favorites-manage-list"></div>
@@ -137,7 +129,7 @@
 
   <div id="api-status-overlay" class="help-overlay" hidden>
     <div class="panel api-status-panel" role="dialog" aria-modal="true" aria-labelledby="api-status-title">
-      <button id="api-status-close" class="panel-close" type="button" aria-label="Cerrar estado de las APIs">✕</button>
+      <button id="api-status-close" class="panel-close" type="button" aria-label="Cerrar estado de las APIs"></button>
       <h2 id="api-status-title" class="panel-title">Estado de las APIs</h2>
       <p class="api-status-hint">Cuánto tarda cada API en responder ahora mismo, probado en directo.</p>
       <ul id="api-status-list" class="api-status-list"></ul>
@@ -146,7 +138,7 @@
   </div>
 
   <footer class="app-footer">
-    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> · se actualiza cada 30 s · v1.3.2</p>
+    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> · se actualiza cada 30 s · v1.3.3</p>
   </footer>
 
   <div id="update-banner" class="update-banner" hidden role="status" aria-live="polite">

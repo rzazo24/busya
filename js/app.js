@@ -9,6 +9,30 @@ const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 // de error siguen diciendo "Interurbano", más claro para quien no sepa qué es CRTM.
 const FAVORITE_NETWORK_LABELS = { emt: 'EMT', crtm: 'CRTM' };
 
+// Iconos SVG (trazo, sin relleno salvo donde se indica) en vez de los caracteres Unicode que
+// había antes: un emoji de color desentona con el resto (ya pasó con 📶) y un simple
+// carácter no da tanto control de forma/grosor como un SVG propio, sobre todo en móvil.
+// Centralizados aquí en vez de repetidos en el HTML y en las tarjetas de favorito (creadas
+// desde JS) para que no haya dos copias del mismo icono que puedan desincronizarse.
+const ICON_HEART =
+  '<svg viewBox="0 0 24 24" fill="none" class="icon-heart" aria-hidden="true"><path d="M12 20.2s-7.5-4.5-9.8-9.1C.6 7.9 2 4.3 5.4 3.4c2.1-.6 4.3.3 5.6 2.1a1 1 0 0 0 1.6 0c1.3-1.8 3.5-2.7 5.6-2.1 3.4.9 4.8 4.5 3.2 7.7-2.3 4.6-9.8 9.1-9.8 9.1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+const ICON_HELP =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.6"/><path d="M9.4 9.6c0-1.9 1.6-3.3 2.7-3.3 2 0 3.4 1.4 3.4 3.1 0 1.3-.7 2.1-1.8 2.8-.9.6-1.3 1-1.3 2v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.1" cy="16.9" r="1.05" fill="currentColor"/></svg>';
+const ICON_INFO =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7.8" r="1.05" fill="currentColor"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const ICON_CLOSE =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const ICON_REFRESH =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.6 12a7.4 7.4 0 0 1 12.6-5.3M19.4 12a7.4 7.4 0 0 1-12.6 5.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M17.2 3.9v3.4h-3.4M6.8 20.1v-3.4h3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_LOCATION =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.5-7-11.8C5 5.2 8.1 2.5 12 2.5s7 2.7 7 6.7C19 14.5 12 21 12 21z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9.3" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>';
+const ICON_ARROW_UP =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M6 10.5 12 5l6 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_ARROW_DOWN =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M6 13.5 12 19l6-5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_SHARE =
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="18" cy="6" r="2.3" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="12" r="2.3" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="18" r="2.3" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.8 16 6.9M8 13.2l8 3.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
 const form = document.getElementById('stop-form');
 const stopInput = document.getElementById('stop-id');
 const searchBtn = document.getElementById('search-btn');
@@ -40,9 +64,24 @@ const networkToggleBtns = document.querySelectorAll('.network-toggle__btn');
 const updateBanner = document.getElementById('update-banner');
 const updateReloadBtn = document.getElementById('update-reload-btn');
 const nearbyBtn = document.getElementById('nearby-btn');
+const nearbyBtnIconEl = document.getElementById('nearby-btn-icon');
 const nearbyResultsEl = document.getElementById('nearby-results');
 const nearbyCloseBtn = document.getElementById('nearby-close');
 const nearbyListEl = document.getElementById('nearby-list');
+
+// Los botones estáticos empiezan vacíos en el HTML — se rellenan aquí, una sola vez, en vez
+// de repetir el marcado del SVG también en el HTML (ver comentario de los ICON_* de arriba).
+favoritesOpenBtn.innerHTML = ICON_HEART;
+apiStatusOpenBtn.innerHTML = ICON_INFO;
+helpOpenBtn.innerHTML = ICON_HELP;
+helpCloseBtn.innerHTML = ICON_CLOSE;
+favoritesCloseBtn.innerHTML = ICON_CLOSE;
+apiStatusCloseBtn.innerHTML = ICON_CLOSE;
+nearbyCloseBtn.innerHTML = ICON_CLOSE;
+refreshBtn.innerHTML = ICON_REFRESH;
+shareBtn.innerHTML = ICON_SHARE;
+nearbyBtnIconEl.innerHTML = ICON_LOCATION;
+// favoriteBtn (♡/♥ según esté guardada o no) se rellena en updateFavoriteBtn(), no aquí.
 
 let refreshTimer = null;
 let currentStopId = null;
@@ -551,7 +590,9 @@ function removeFavorite(stopId, network) {
 
 function updateFavoriteBtn() {
   const active = currentStopId && isFavorite(currentStopId, currentNetwork);
-  favoriteBtn.textContent = active ? '♥' : '♡';
+  // Mismo icono de corazón en los dos estados — de contorno o relleno según .active (ver
+  // ".icon-heart" en el CSS), en vez de textContent con dos caracteres Unicode distintos.
+  if (!favoriteBtn.querySelector('svg')) favoriteBtn.innerHTML = ICON_HEART;
   favoriteBtn.classList.toggle('active', Boolean(active));
   favoriteBtn.title = active ? 'Quitar de favoritos' : 'Guardar como favorita';
 }
@@ -644,7 +685,7 @@ function renderFavoriteCard(fav, index, total) {
   const upBtn = document.createElement('button');
   upBtn.type = 'button';
   upBtn.className = 'help-btn';
-  upBtn.textContent = '↑';
+  upBtn.innerHTML = ICON_ARROW_UP;
   upBtn.setAttribute('aria-label', 'Subir en la lista');
   upBtn.disabled = index === 0;
   upBtn.addEventListener('click', () => moveFavorite(index, -1));
@@ -652,7 +693,7 @@ function renderFavoriteCard(fav, index, total) {
   const downBtn = document.createElement('button');
   downBtn.type = 'button';
   downBtn.className = 'help-btn';
-  downBtn.textContent = '↓';
+  downBtn.innerHTML = ICON_ARROW_DOWN;
   downBtn.setAttribute('aria-label', 'Bajar en la lista');
   downBtn.disabled = index === total - 1;
   downBtn.addEventListener('click', () => moveFavorite(index, 1));
@@ -660,7 +701,7 @@ function renderFavoriteCard(fav, index, total) {
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
   removeBtn.className = 'help-btn';
-  removeBtn.textContent = '×';
+  removeBtn.innerHTML = ICON_CLOSE;
   removeBtn.setAttribute('aria-label', `Quitar ${fav.name || fav.stopId} de favoritos`);
   removeBtn.addEventListener('click', () => {
     removeFavorite(fav.stopId, network);

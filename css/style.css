@@ -138,6 +138,18 @@ main {
   cursor: pointer;
 }
 
+.nearby-btn__icon {
+  display: inline-flex;
+  vertical-align: -0.2em;
+  margin-right: 4px;
+}
+
+.nearby-btn__icon svg {
+  display: block;
+  width: 1.1em;
+  height: 1.1em;
+}
+
 .network-toggle {
   display: flex;
   gap: 8px;
@@ -320,6 +332,22 @@ main {
    Chromium de escritorio, descentrado en móvil). display:block lo saca de ese cálculo. */
 .help-btn svg {
   display: block;
+  /* Relativo al propio font-size del botón (13px base, 15px en la topbar, ajustado también en
+     el breakpoint móvil) en vez de un tamaño fijo — así el icono escala igual que ya lo
+     hacía el carácter de texto al que sustituye, sin necesidad de reglas nuevas por breakpoint. */
+  width: 1.1em;
+  height: 1.1em;
+}
+
+/* Contorno por defecto; relleno solo cuando la parada actual ya es favorita (#favorite-btn)
+   o en el botón "Favoritos" de la cabecera, que siempre se muestra lleno. */
+.icon-heart path {
+  stroke: currentColor;
+}
+
+.favorites-open-btn .icon-heart path,
+#favorite-btn.active .icon-heart path {
+  fill: currentColor;
 }
 
 .arrivals-list {
@@ -756,6 +784,18 @@ main {
   font-size: 15px;
   cursor: pointer;
   line-height: 1;
+  /* El centrado por defecto de <button> ya centraba bien el carácter "✕" de antes, pero no
+     un <svg> (elemento de línea base, no de texto) — con flexbox no depende de eso. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.panel-close svg {
+  display: block;
+  width: 1.1em;
+  height: 1.1em;
 }
 
 
