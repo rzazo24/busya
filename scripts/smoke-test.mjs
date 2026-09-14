@@ -197,6 +197,21 @@ try {
       if (errors.length) throw new Error(errors.join(' | '));
     })
   );
+
+  await check('el panel de estado de las APIs mide y muestra los tres tiempos', () =>
+    withPage(async (page) => {
+      await page.goto(baseUrl);
+      await page.click('#api-status-open');
+      await page.waitForSelector('.api-status-panel');
+      await page.waitForFunction(
+        () => document.querySelectorAll('.api-status-row__value--pending').length === 0,
+        { timeout: 20_000 }
+      );
+      const rowCount = await page.locator('.api-status-row').count();
+      if (rowCount !== 3) throw new Error(`se esperaban 3 filas, hay ${rowCount}`);
+      await page.click('#api-status-close');
+    })
+  );
 } finally {
   await browser.close();
   server.close();

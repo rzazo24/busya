@@ -29,6 +29,12 @@ const favoritesOverlay = document.getElementById('favorites-overlay');
 const favoritesPanel = favoritesOverlay.querySelector('.favorites-modal');
 const favoritesManageListEl = document.getElementById('favorites-manage-list');
 const favoritesEmptyEl = document.getElementById('favorites-empty');
+const apiStatusOpenBtn = document.getElementById('api-status-open');
+const apiStatusCloseBtn = document.getElementById('api-status-close');
+const apiStatusOverlay = document.getElementById('api-status-overlay');
+const apiStatusPanel = apiStatusOverlay.querySelector('.api-status-panel');
+const apiStatusListEl = document.getElementById('api-status-list');
+const apiStatusRecheckBtn = document.getElementById('api-status-recheck');
 const networkToggleBtns = document.querySelectorAll('.network-toggle__btn');
 const updateBanner = document.getElementById('update-banner');
 const updateReloadBtn = document.getElementById('update-reload-btn');
@@ -142,33 +148,47 @@ function restoreFocusAfterOverlay() {
   lastFocusedBeforeOverlay = null;
 }
 
-function openHelp() {
+// Helper genérico para los tres overlays (ayuda, favoritos, estado de las APIs): mismo abrir
+// (guardar foco, mostrar, bloquear scroll, enfocar el ✕) y cerrar (ocultar, desbloquear
+// scroll, devolver el foco) para los tres, en vez de repetirlo tal cual por cada uno.
+function openOverlay(overlay, closeBtn) {
   lastFocusedBeforeOverlay = document.activeElement;
-  helpOverlay.hidden = false;
+  overlay.hidden = false;
   lockBodyScroll();
-  helpCloseBtn.focus();
+  closeBtn.focus();
+}
+
+function closeOverlay(overlay) {
+  if (overlay.hidden) return;
+  overlay.hidden = true;
+  unlockBodyScroll();
+  restoreFocusAfterOverlay();
+}
+
+function openHelp() {
+  openOverlay(helpOverlay, helpCloseBtn);
 }
 
 function closeHelp() {
-  if (helpOverlay.hidden) return;
-  helpOverlay.hidden = true;
-  unlockBodyScroll();
-  restoreFocusAfterOverlay();
+  closeOverlay(helpOverlay);
 }
 
 function openFavorites() {
-  lastFocusedBeforeOverlay = document.activeElement;
   renderFavoritesManageList();
-  favoritesOverlay.hidden = false;
-  lockBodyScroll();
-  favoritesCloseBtn.focus();
+  openOverlay(favoritesOverlay, favoritesCloseBtn);
 }
 
 function closeFavorites() {
-  if (favoritesOverlay.hidden) return;
-  favoritesOverlay.hidden = true;
-  unlockBodyScroll();
-  restoreFocusAfterOverlay();
+  closeOverlay(favoritesOverlay);
+}
+
+function openApiStatus() {
+  openOverlay(apiStatusOverlay, apiStatusCloseBtn);
+  checkApiStatus();
+}
+
+function closeApiStatus() {
+  closeOverlay(apiStatusOverlay);
 }
 
 helpOpenBtn.addEventListener('click', openHelp);
@@ -183,17 +203,89 @@ favoritesOverlay.addEventListener('click', (event) => {
   if (event.target === favoritesOverlay) closeFavorites();
 });
 
+apiStatusOpenBtn.addEventListener('click', openApiStatus);
+apiStatusCloseBtn.addEventListener('click', closeApiStatus);
+apiStatusOverlay.addEventListener('click', (event) => {
+  if (event.target === apiStatusOverlay) closeApiStatus();
+});
+apiStatusRecheckBtn.addEventListener('click', checkApiStatus);
+
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     closeHelp();
     closeFavorites();
+    closeApiStatus();
     return;
   }
   if (event.key === 'Tab') {
     if (!helpOverlay.hidden) trapFocusInPanel(event, helpPanel);
     else if (!favoritesOverlay.hidden) trapFocusInPanel(event, favoritesPanel);
+    else if (!apiStatusOverlay.hidden) trapFocusInPanel(event, apiStatusPanel);
   }
 });
+
+// Paradas reales usadas solo para medir latencia, no para mostrar sus tiempos: 07288 (varias
+// líneas de CRTM a la vez) y 3351 (parada real de EMT que en su día sacó a la luz el caso "No
+// estimations found" — ver CLAUDE.md), las mismas que usa scripts/smoke-test.mjs.
+const API_STATUS_CHECKS = [
+  { name: 'EMT · tiempos de paso', url: '/api/emt-arrives?stopId=3351' },
+  { name: 'Interurbano (CRTM) · tiempos de paso', url: '/api/crtm-arrives?stopId=07288' },
+  { name: 'Paradas cercanas', url: '/api/nearby-stops?lat=40.4657&lon=-3.6892' },
+];
+
+// Solo mide si la petición completa a tiempo (res.ok) y cuánto tarda — no si esa parada en
+// concreto tiene datos ahora mismo. api/emt-arrives.js, por ejemplo, siempre responde 200
+// aunque EMT diga "No estimations found" (ver fetchArrivals); solo un fallo real de la propia
+// API/proxy (login caído, timeout, etc.) da un status distinto, que es lo que interesa aquí.
+async function measureApiLatency({ name, url }) {
+  const start = performance.now();
+  try {
+    const res = await fetch(url);
+    const elapsedMs = Math.round(performance.now() - start);
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      return { name, elapsedMs, ok: false, message: payload.error || `Error ${res.status}` };
+    }
+    return { name, elapsedMs, ok: true };
+  } catch (err) {
+    return { name, elapsedMs: Math.round(performance.now() - start), ok: false, message: err.message };
+  }
+}
+
+function renderApiStatusRow(name, valueText, valueClass) {
+  const li = document.createElement('li');
+  li.className = 'api-status-row';
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'api-status-row__name';
+  nameEl.textContent = name;
+
+  const valueEl = document.createElement('span');
+  valueEl.className = `api-status-row__value ${valueClass}`;
+  valueEl.textContent = valueText;
+
+  li.append(nameEl, valueEl);
+  return li;
+}
+
+async function checkApiStatus() {
+  apiStatusListEl.innerHTML = '';
+  for (const check of API_STATUS_CHECKS) {
+    apiStatusListEl.appendChild(renderApiStatusRow(check.name, 'Comprobando…', 'api-status-row__value--pending'));
+  }
+
+  const results = await Promise.all(API_STATUS_CHECKS.map(measureApiLatency));
+
+  apiStatusListEl.innerHTML = '';
+  for (const result of results) {
+    if (!result.ok) {
+      apiStatusListEl.appendChild(renderApiStatusRow(result.name, result.message || 'Error', 'api-status-row__value--error'));
+      continue;
+    }
+    const valueClass = result.elapsedMs < 1000 ? 'api-status-row__value--ok' : 'api-status-row__value--slow';
+    apiStatusListEl.appendChild(renderApiStatusRow(result.name, `${result.elapsedMs} ms`, valueClass));
+  }
+}
 
 function setNetwork(network) {
   currentNetwork = network;
