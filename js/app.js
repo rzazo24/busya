@@ -333,6 +333,14 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
     }
 
     if (payload.code && payload.code !== '00') {
+      // Confirmado en producción con la parada 3351: EMT usa un code de error con
+      // description "No estimations found" para una parada real que simplemente no tiene
+      // tiempos ahora mismo — no para una parada inválida. Otras apps de EMT lo tratan como
+      // un estado normal (sin buses ahora), no como fallo, así que aquí también.
+      if (network === 'emt' && /no estimations found/i.test(payload.description || '')) {
+        renderArrivals({ stopName: null, arrivals: [] }, network);
+        return;
+      }
       throw new Error(payload.description || `La API de ${NETWORK_LABELS[network]} devolvió un error`);
     }
 
