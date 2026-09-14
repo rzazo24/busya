@@ -8,10 +8,11 @@
   --green: #3ef27a;
   --orange: #ffb347;
   --red: #ff5d5d;
-  /* Mismo violeta que usa Disaster Watch (--local) para marcar una fuente de datos
-     complementaria y ajena a su escala principal — aquí, CRTM (interurbanos) frente al
-     verde ya establecido para EMT. */
-  --purple: #a78bfa;
+  /* En Madrid los buses de EMT son azules y los interurbanos verdes — se usa ese mismo
+     código de color para distinguir red en badges de línea, toggle y favoritos. El verde
+     de interurbanos ya es --accent (el acento base de toda la app), así que solo hace
+     falta un azul nuevo para EMT. */
+  --blue: #3ea6f2;
   --font: 'IBM Plex Mono', monospace;
 }
 
@@ -144,9 +145,9 @@ main {
   font-weight: 600;
 }
 
-.network-toggle__btn[data-network="crtm"].active {
-  border-color: var(--purple);
-  color: var(--purple);
+.network-toggle__btn[data-network="emt"].active {
+  border-color: var(--blue);
+  color: var(--blue);
 }
 
 .stop-form label {
@@ -309,10 +310,18 @@ main {
   min-width: 2.4em;
   padding: 4px 8px;
   border-radius: 10px;
+  /* Verde por defecto: coincide con el color real de los buses interurbanos en Madrid, y
+     es el mismo --accent que ya usa toda la app — solo EMT necesita su propio azul. */
   background: var(--accent);
   color: #06170a;
   font-weight: 700;
   font-size: 14px;
+}
+
+.arrival-item__line--emt {
+  /* Azul: color real de los buses urbanos de EMT en Madrid. */
+  background: var(--blue);
+  color: #001830;
 }
 
 .arrival-item__destination {
@@ -508,8 +517,8 @@ main {
   color: var(--accent);
 }
 
-.favorite-card__network[data-network="crtm"] {
-  color: var(--purple);
+.favorite-card__network[data-network="emt"] {
+  color: var(--blue);
 }
 
 .favorite-card__view {

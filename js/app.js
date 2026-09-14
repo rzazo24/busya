@@ -411,7 +411,9 @@ function renderArrivalItem(arrival, network) {
   li.className = 'arrival-item';
 
   const line = document.createElement('span');
-  line.className = 'arrival-item__line';
+  // Azul para EMT, verde para interurbanos — el mismo código de color de los buses reales
+  // en Madrid (verde ya es el acento por defecto de la app, así que solo EMT necesita clase).
+  line.className = network === 'emt' ? 'arrival-item__line arrival-item__line--emt' : 'arrival-item__line';
   line.textContent = arrival.line;
 
   const destination = document.createElement('span');
