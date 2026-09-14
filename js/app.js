@@ -22,9 +22,11 @@ const favoriteBtn = document.getElementById('favorite-btn');
 const helpOpenBtn = document.getElementById('help-open');
 const helpCloseBtn = document.getElementById('help-close');
 const helpOverlay = document.getElementById('help-overlay');
+const helpPanel = helpOverlay.querySelector('.help-panel');
 const favoritesOpenBtn = document.getElementById('favorites-open');
 const favoritesCloseBtn = document.getElementById('favorites-close');
 const favoritesOverlay = document.getElementById('favorites-overlay');
+const favoritesPanel = favoritesOverlay.querySelector('.favorites-modal');
 const favoritesManageListEl = document.getElementById('favorites-manage-list');
 const favoritesEmptyEl = document.getElementById('favorites-empty');
 const networkToggleBtns = document.querySelectorAll('.network-toggle__btn');
@@ -109,27 +111,64 @@ function unlockBodyScroll() {
   }
 }
 
+// Accesibilidad de los overlays: al abrir, se recuerda qué tenía el foco para devolvérselo al
+// cerrar (si no, tras ocultar el panel el foco cae al <body> y quien navega con teclado o
+// lector de pantalla pierde el sitio) y se mueve el foco al botón ✕ del propio panel; mientras
+// esté abierto, el listener de "Tab" de más abajo atrapa el foco dentro de sus elementos
+// enfocables para no poder tabular hasta el contenido de detrás (oculto, pero seguiría en el
+// árbol de accesibilidad sin esto).
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let lastFocusedBeforeOverlay = null;
+
+function trapFocusInPanel(event, panel) {
+  const focusable = [...panel.querySelectorAll(FOCUSABLE_SELECTOR)].filter((el) => el.offsetParent !== null);
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function restoreFocusAfterOverlay() {
+  if (lastFocusedBeforeOverlay && document.contains(lastFocusedBeforeOverlay)) {
+    lastFocusedBeforeOverlay.focus();
+  }
+  lastFocusedBeforeOverlay = null;
+}
+
 function openHelp() {
+  lastFocusedBeforeOverlay = document.activeElement;
   helpOverlay.hidden = false;
   lockBodyScroll();
+  helpCloseBtn.focus();
 }
 
 function closeHelp() {
   if (helpOverlay.hidden) return;
   helpOverlay.hidden = true;
   unlockBodyScroll();
+  restoreFocusAfterOverlay();
 }
 
 function openFavorites() {
+  lastFocusedBeforeOverlay = document.activeElement;
   renderFavoritesManageList();
   favoritesOverlay.hidden = false;
   lockBodyScroll();
+  favoritesCloseBtn.focus();
 }
 
 function closeFavorites() {
   if (favoritesOverlay.hidden) return;
   favoritesOverlay.hidden = true;
   unlockBodyScroll();
+  restoreFocusAfterOverlay();
 }
 
 helpOpenBtn.addEventListener('click', openHelp);
@@ -145,9 +184,15 @@ favoritesOverlay.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  closeHelp();
-  closeFavorites();
+  if (event.key === 'Escape') {
+    closeHelp();
+    closeFavorites();
+    return;
+  }
+  if (event.key === 'Tab') {
+    if (!helpOverlay.hidden) trapFocusInPanel(event, helpPanel);
+    else if (!favoritesOverlay.hidden) trapFocusInPanel(event, favoritesPanel);
+  }
 });
 
 function setNetwork(network) {

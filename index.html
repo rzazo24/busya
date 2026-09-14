@@ -76,9 +76,9 @@
   </main>
 
   <div id="help-overlay" class="help-overlay" hidden>
-    <div class="panel help-panel">
+    <div class="panel help-panel" role="dialog" aria-modal="true" aria-labelledby="help-title">
       <button id="help-close" class="panel-close" type="button" aria-label="Cerrar ayuda">✕</button>
-      <h2 class="panel-title">Ayuda</h2>
+      <h2 id="help-title" class="panel-title">Ayuda</h2>
       <div class="help-content">
         <h3>Buscar una parada</h3>
         <p>Elige la red (EMT Madrid o Interurbano) e introduce el número de parada tal como
@@ -109,9 +109,9 @@
   </div>
 
   <div id="favorites-overlay" class="help-overlay" hidden>
-    <div class="favorites-modal">
+    <div class="favorites-modal" role="dialog" aria-modal="true" aria-labelledby="favorites-title">
       <div class="favorites-modal__header">
-        <h2 class="panel-title">Favoritos</h2>
+        <h2 id="favorites-title" class="panel-title">Favoritos</h2>
         <button id="favorites-close" class="help-btn" type="button" aria-label="Cerrar favoritos">✕</button>
       </div>
       <p id="favorites-empty" class="favorites-empty" hidden>Aún no tienes paradas favoritas. Pulsa ♡ junto a una parada para guardarla.</p>

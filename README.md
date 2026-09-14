@@ -22,6 +22,9 @@ publicable).
 - Vanilla HTML/CSS/JS, sin frameworks ni build step.
 - Desplegado en Vercel como sitio estático + Vercel Functions mínimas que actúan de proxy
   hacia cada API de transporte.
+- Los paneles de ayuda y favoritos son accesibles por teclado: `role="dialog"`, el foco se
+  mueve al abrirlos y se devuelve a quien los abrió al cerrarlos, y Tab/Shift+Tab queda
+  atrapado dentro mientras están abiertos.
 
 ### EMT Madrid
 
