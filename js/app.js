@@ -510,6 +510,12 @@ function renderArrivals(normalized, network) {
   resultsEl.hidden = false;
 }
 
+// Cuántas llegadas de una misma línea favorita suben al principio de la lista. Sin este
+// límite, una línea favorita con muchos pasos programados (p.ej. en CRTM, donde una parada
+// puede servir los dos sentidos de una línea — ver normalizeCrtm) podía tapar con una
+// llegada lejana el próximo bus real de otra línea, que quedaba escondido más abajo.
+const FAVORITE_LINE_PROMOTE_LIMIT = 3;
+
 function renderArrivalsList(arrivals, network) {
   arrivalsListEl.innerHTML = '';
 
@@ -519,15 +525,28 @@ function renderArrivalsList(arrivals, network) {
     li.textContent = 'No hay buses en camino ahora mismo.';
     arrivalsListEl.appendChild(li);
   } else {
-    // Las líneas favoritas suben al principio (para que "destaquen", que es justo lo que
-    // se pidió); dentro de cada grupo se mantiene el orden por ETA de siempre.
-    const sorted = [...arrivals].sort((a, b) => {
-      const aFav = isFavoriteLine(a.line, network);
-      const bFav = isFavoriteLine(b.line, network);
-      if (aFav !== bFav) return aFav ? -1 : 1;
-      return a.estimateArrive - b.estimateArrive;
-    });
-    for (const arrival of sorted) {
+    const byEta = [...arrivals].sort((a, b) => a.estimateArrive - b.estimateArrive);
+
+    // Solo las FAVORITE_LINE_PROMOTE_LIMIT llegadas más próximas de cada línea favorita
+    // suben al principio; el resto (incluidas llegadas posteriores de esa misma línea) se
+    // queda en su sitio cronológico normal, mezclado con las demás líneas.
+    const promotedCountByLine = new Map();
+    const promoted = [];
+    const rest = [];
+    for (const arrival of byEta) {
+      if (isFavoriteLine(arrival.line, network)) {
+        const key = String(arrival.line);
+        const count = promotedCountByLine.get(key) ?? 0;
+        if (count < FAVORITE_LINE_PROMOTE_LIMIT) {
+          promotedCountByLine.set(key, count + 1);
+          promoted.push(arrival);
+          continue;
+        }
+      }
+      rest.push(arrival);
+    }
+
+    for (const arrival of [...promoted, ...rest]) {
       arrivalsListEl.appendChild(renderArrivalItem(arrival, network));
     }
   }
