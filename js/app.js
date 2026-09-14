@@ -47,7 +47,7 @@ form.addEventListener('submit', (event) => {
 });
 
 refreshBtn.addEventListener('click', () => {
-  if (currentStopId) fetchArrivals(currentStopId, currentNetwork);
+  if (currentStopId) fetchArrivals(currentStopId, currentNetwork, true);
 });
 
 favoriteBtn.addEventListener('click', () => {
@@ -93,7 +93,7 @@ function searchStop(stopId, network = currentNetwork) {
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
   localStorage.setItem(LAST_NETWORK_STORAGE_KEY, network);
-  fetchArrivals(stopId, network);
+  fetchArrivals(stopId, network, true);
   // El fallback de horario/frecuencia es una pieza propia de EMT (ver ensureStopSchedule):
   // CRTM ya da siempre una hora de paso utilizable, incluido el hueco nocturno, así que no
   // hace falta nada parecido para esa red.
@@ -316,10 +316,10 @@ function startAutoRefresh() {
   }, REFRESH_INTERVAL_MS);
 }
 
-async function fetchArrivals(stopId, network) {
+async function fetchArrivals(stopId, network, isExplicitSearch = false) {
   // Solo se muestra "Buscando parada…" en la primera carga (resultsEl aún oculto). En los
-  // refrescos de cada 30s (o el botón ↻) el panel ya está visible con datos: mostrar y
-  // ocultar ese aviso en cada vuelta es lo que producía el salto arriba-abajo del panel.
+  // refrescos de cada 30s el panel ya está visible con datos: mostrar y ocultar ese aviso en
+  // cada vuelta es lo que producía el salto arriba-abajo del panel.
   const isFirstLoad = resultsEl.hidden;
   if (isFirstLoad) showStatus('Buscando parada…', 'loading');
 
@@ -340,12 +340,14 @@ async function fetchArrivals(stopId, network) {
 
     renderArrivals(normalized, network);
   } catch (err) {
-    if (isFirstLoad) {
+    // isFirstLoad (nada en pantalla aún) o isExplicitSearch (el usuario pidió justo esta
+    // parada, aunque hubiera resultados de otra parada anterior todavía visibles) siempre
+    // muestran el error. Solo el refresco automático en segundo plano de la MISMA parada se
+    // traga fallos puntuales en silencio, para no tapar datos buenos por un hipo pasajero.
+    if (isFirstLoad || isExplicitSearch) {
       showStatus(`No se pudo obtener la parada ${stopId}: ${err.message}`, 'error');
       resultsEl.hidden = true;
     } else {
-      // Refresco en segundo plano: un fallo puntual (timeout, hipo de la API) no debe tapar
-      // datos buenos que ya están en pantalla ni mover el panel.
       console.error(`Refresco de la parada ${stopId} falló:`, err.message);
     }
   }
