@@ -62,6 +62,12 @@ sus tiempos. El backend (`api/nearby-stops.js`) reutiliza el propio agregador de
 (`GetNearestStopsByLocation.php`), que también indexa las paradas de EMT: no hace falta un
 endpoint de geolocalización propio de EMT, que no lo expone en su API pública.
 
+## Enlace directo a una parada
+
+La URL siempre refleja la parada que se está viendo (`?stop=72&network=emt`), así que se
+puede compartir o guardar como marcador y abrirla directamente en esa parada. Un enlace con
+`?stop=` manda por delante de la última parada consultada en ese navegador.
+
 ## Favoritos
 
 Se guardan solo en `localStorage`, sin cuentas ni servidor — no se sincronizan entre

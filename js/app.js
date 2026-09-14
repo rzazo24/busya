@@ -158,12 +158,23 @@ function searchStop(stopId, network = currentNetwork) {
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
   localStorage.setItem(LAST_NETWORK_STORAGE_KEY, network);
+  updateUrlForStop(stopId, network);
   fetchArrivals(stopId, network, true);
   // El fallback de horario/frecuencia es una pieza propia de EMT (ver ensureStopSchedule):
   // CRTM ya da siempre una hora de paso utilizable, incluido el hueco nocturno, así que no
   // hace falta nada parecido para esa red.
   if (network === 'emt') ensureStopSchedule(stopId);
   startAutoRefresh();
+}
+
+// Deja la parada actual en la URL (?stop=&network=) para poder compartirla o guardarla como
+// marcador — replaceState y no pushState, para no llenar el historial con cada búsqueda ni
+// que el botón "atrás" tenga que pasar por todas las paradas consultadas en la sesión.
+function updateUrlForStop(stopId, network) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('stop', stopId);
+  url.searchParams.set('network', network);
+  history.replaceState(null, '', url);
 }
 
 // Se pide una sola vez por parada (no en cada refresco): el horario/frecuencia por línea
@@ -816,12 +827,20 @@ function hideStatus() {
   statusEl.hidden = true;
 }
 
-// Recupera la última parada (y red) consultada para no partir de cero.
-setNetwork(localStorage.getItem(LAST_NETWORK_STORAGE_KEY) || 'emt');
-const lastStopId = localStorage.getItem(LAST_STOP_STORAGE_KEY);
-if (lastStopId) {
-  stopInput.value = lastStopId;
-  searchStop(lastStopId, currentNetwork);
+// Un enlace directo (?stop=&network=, ver updateUrlForStop) manda por delante de la última
+// parada consultada en este navegador — es justo para eso, para poder abrir la parada de
+// otra persona sin que la propia sobrescriba lo que se quería compartir.
+const urlParams = new URLSearchParams(window.location.search);
+const urlStopId = urlParams.get('stop');
+const initialNetwork = urlStopId
+  ? (urlParams.get('network') === 'crtm' ? 'crtm' : 'emt')
+  : (localStorage.getItem(LAST_NETWORK_STORAGE_KEY) || 'emt');
+const initialStopId = urlStopId || localStorage.getItem(LAST_STOP_STORAGE_KEY);
+
+setNetwork(initialNetwork);
+if (initialStopId) {
+  stopInput.value = initialStopId;
+  searchStop(initialStopId, initialNetwork);
 }
 
 // Cachea el shell de la app (ver sw.js) para que la PWA instalada cargue al instante y
