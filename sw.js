@@ -4,7 +4,14 @@
 // haría que la app mostrara tiempos de bus caducados sin avisar, así que solo se interceptan
 // las rutas exactas de SHELL_FILES; todo lo demás (esas dos rutas, fuentes de Google, etc.)
 // pasa de largo sin tocar la caché.
-const CACHE_NAME = 'busya-v1';
+// Subir este número es lo que avisa a quien ya tiene la app abierta/instalada de que hay una
+// versión nueva (ver el aviso "Recargar" en app.js, que depende de que este propio archivo
+// cambie de bytes — es lo único que hace que el navegador note una versión nueva del service
+// worker). El stale-while-revalidate de abajo ya refresca solo el contenido de SHELL_FILES en
+// segundo plano sin necesidad de subir esto, pero entonces nadie se entera del cambio hasta
+// la siguiente vez que abra la app de cero: subir la versión aquí en cada despliegue con
+// cambios visibles es lo que hace que salga el aviso.
+const CACHE_NAME = 'busya-v2';
 const SHELL_FILES = [
   '/',
   '/index.html',
@@ -39,10 +46,10 @@ self.addEventListener('fetch', (event) => {
 
   // Stale-while-revalidate: sirve la copia cacheada al instante (rápido, funciona offline)
   // pero siempre pide también una fresca en segundo plano y actualiza la caché para la
-  // próxima vez. Con cache-first a secas, un cambio en index.html/style.css/app.js solo se
-  // notaría cuando también cambiaran los bytes de este propio sw.js (lo único que hace que
-  // el navegador se entere de que hay una versión nueva del service worker) — así basta con
-  // tocar el shell, sin acordarse de subir CACHE_NAME salvo que cambie SHELL_FILES.
+  // próxima vez. Esto por sí solo ya mantiene el contenido al día sin subir CACHE_NAME —
+  // pero en silencio, sin avisar a quien ya tenía la app abierta hasta que la cierre y la
+  // abra de cero. Para que salga el aviso de "versión nueva" (ver arriba) hay que subir
+  // CACHE_NAME.
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) =>
       cache.match(event.request).then((cached) => {
