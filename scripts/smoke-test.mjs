@@ -156,6 +156,26 @@ try {
     })
   );
 
+  await check('compartir una parada copia el enlace al portapapeles', () =>
+    withPage(async (page, context) => {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.goto(baseUrl);
+      await page.fill('#stop-id', CRTM_STOP_ID);
+      await page.click('.network-toggle__btn[data-network="crtm"]');
+      await page.click('button[type="submit"]');
+      await page.waitForSelector('.arrival-item, .arrivals-list__empty', { timeout: 15_000 });
+      // Chromium headless no expone navigator.share, así que este clic prueba el fallback de
+      // portapapeles — el mismo botón, con Web Share API disponible, llamaría a
+      // navigator.share en su lugar (comprobado a mano, no aquí: no depende de la app).
+      await page.click('#share-btn');
+      await page.waitForFunction(() => document.getElementById('share-btn').textContent === '✓', { timeout: 2_000 });
+      const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+      if (!clipboardText.includes(`stop=${CRTM_STOP_ID}`)) {
+        throw new Error(`el portapapeles no tiene el enlace esperado: "${clipboardText}"`);
+      }
+    })
+  );
+
   await check('buscar paradas cercanas por geolocalización', () =>
     withPage(async (page, context) => {
       await context.grantPermissions(['geolocation']);

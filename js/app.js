@@ -19,6 +19,7 @@ const lastUpdatedEl = document.getElementById('last-updated');
 const arrivalsListEl = document.getElementById('arrivals-list');
 const refreshBtn = document.getElementById('refresh-btn');
 const favoriteBtn = document.getElementById('favorite-btn');
+const shareBtn = document.getElementById('share-btn');
 const helpOpenBtn = document.getElementById('help-open');
 const helpCloseBtn = document.getElementById('help-close');
 const helpOverlay = document.getElementById('help-overlay');
@@ -87,6 +88,42 @@ favoriteBtn.addEventListener('click', () => {
   if (!currentStopId) return;
   toggleFavorite(currentStopId, currentNetwork, currentStopName);
   updateFavoriteBtn();
+});
+
+// La URL ya lleva siempre la parada actual (ver updateUrlForStop), así que compartir es
+// simplemente compartir la página tal cual. Con Web Share API (móvil, algunos navegadores de
+// escritorio) se abre el diálogo nativo; sin ella, se copia el enlace y se confirma un
+// momento en el propio botón en vez de con el status de búsqueda, que es para otra cosa.
+shareBtn.addEventListener('click', async () => {
+  if (!currentStopId) return;
+
+  const stopLabel = currentStopName || `la parada ${currentStopId}`;
+  const shareData = {
+    title: `BusYa · ${currentStopName || `Parada ${currentStopId}`}`,
+    text: `Tiempos de paso de ${stopLabel} en BusYa`,
+    url: window.location.href,
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch {
+      // AbortError si se cierra el diálogo nativo sin elegir nada — no es un fallo.
+    }
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareData.url);
+    const original = shareBtn.textContent;
+    shareBtn.textContent = '✓';
+    setTimeout(() => {
+      shareBtn.textContent = original;
+    }, 1500);
+  } catch {
+    // Sin Web Share API ni portapapeles (contexto no seguro, permiso denegado…): no queda
+    // nada más que se pueda hacer aquí sin pedir que se copie la URL a mano.
+  }
 });
 
 // En táctil (sobre todo iOS/PWA), un overlay position:fixed no basta para impedir que un

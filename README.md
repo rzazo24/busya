@@ -71,6 +71,10 @@ La URL siempre refleja la parada que se está viendo (`?stop=72&network=emt`), a
 puede compartir o guardar como marcador y abrirla directamente en esa parada. Un enlace con
 `?stop=` manda por delante de la última parada consultada en ese navegador.
 
+El botón ↗ junto al ♡ abre el diálogo nativo para compartir (WhatsApp, Mensajes…) en los
+navegadores con Web Share API; en el resto, copia el enlace al portapapeles y lo confirma un
+momento en el propio botón.
+
 ## Favoritos
 
 Se guardan solo en `localStorage`, sin cuentas ni servidor — no se sincronizan entre
