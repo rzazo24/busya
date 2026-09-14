@@ -105,7 +105,7 @@ try {
     skip('buscar una parada real de EMT', 'faltan EMT_EMAIL/EMT_PASSWORD (copia .env.example a .env.local)');
   }
 
-  await check('guardar una parada como favorita y verla en el panel', () =>
+  await check('guardar una parada como favorita y verla en el panel (con vista previa)', () =>
     withPage(async (page) => {
       await page.goto(baseUrl);
       await page.click('.network-toggle__btn[data-network="crtm"]');
@@ -117,6 +117,13 @@ try {
       await page.waitForSelector('.favorite-card');
       const count = await page.locator('.favorite-card').count();
       if (count !== 1) throw new Error(`se esperaba 1 tarjeta de favorito, hay ${count}`);
+
+      // La vista previa de tiempos dentro de la tarjeta debe salir de "Cargando…" a algo
+      // (llegadas reales, "Sin buses ahora" o un aviso de fallo) — no dejarse a medias.
+      await page.waitForFunction(
+        () => !document.querySelector('.favorite-card__preview').textContent.includes('Cargando'),
+        { timeout: 20_000 }
+      );
     })
   );
 

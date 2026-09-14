@@ -78,7 +78,9 @@ dispositivos ni sobreviven a borrar los datos del sitio (se explica en el panel 
 la propia app). Cada favorito recuerda su red (EMT o Interurbano), así que un mismo número de
 parada en las dos redes no se confunde. Desde el botón ♥ de la cabecera se abre un panel con
 una tarjeta por parada favorita, donde se puede renombrar (input editable), reordenar (↑/↓) y
-saltar directamente a sus tiempos de paso.
+saltar directamente a sus tiempos de paso. Cada tarjeta muestra además, sin tener que entrar,
+las 2 llegadas más próximas de esa parada — un vistazo rápido, no sustituye a "Ver tiempos →"
+(que sigue llevando a la vista completa con refresco cada 30 s).
 
 También se pueden marcar líneas como favoritas tocando su número en la lista de tiempos de
 paso: se resaltan con un anillo dorado y suben al principio de la lista de esa parada (como

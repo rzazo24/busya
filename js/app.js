@@ -659,8 +659,79 @@ function renderFavoriteCard(fav, index, total) {
   });
 
   meta.append(metaLeft, viewBtn);
-  card.append(header, meta);
+
+  const preview = document.createElement('div');
+  preview.className = 'favorite-card__preview favorite-card__preview--empty';
+  preview.textContent = 'Cargando…';
+  loadFavoriteCardPreview(fav.stopId, network, preview);
+
+  card.append(header, meta, preview);
   return card;
+}
+
+// Vista previa de tiempos dentro de cada tarjeta de favorito: no sustituye a "Ver tiempos →"
+// (que sigue llevando a la vista completa, con refresco cada 30s y demás), es solo un
+// vistazo rápido de las 2 llegadas más próximas sin tener que entrar. Se pide una vez al
+// abrir el panel, no se refresca sola mientras está abierto — para eso ya está "Ver tiempos".
+async function loadFavoriteCardPreview(stopId, network, previewEl) {
+  try {
+    const endpoint = network === 'crtm' ? '/api/crtm-arrives' : '/api/emt-arrives';
+    const res = await fetch(`${endpoint}?stopId=${encodeURIComponent(stopId)}`);
+    const payload = await res.json();
+
+    if (!res.ok) throw new Error(payload.error || `Error ${res.status}`);
+
+    if (payload.code && payload.code !== '00') {
+      // Mismo caso que en fetchArrivals: "No estimations found" es una parada real sin
+      // tiempos ahora mismo, no un fallo.
+      if (network === 'emt' && /no estimations found/i.test(payload.description || '')) {
+        renderFavoriteCardPreviewEmpty(previewEl);
+        return;
+      }
+      throw new Error(payload.description || 'Error');
+    }
+
+    const normalized = network === 'crtm' ? normalizeCrtm(payload) : normalizeEmt(payload);
+    if (normalized.arrivals.length === 0) {
+      renderFavoriteCardPreviewEmpty(previewEl);
+      return;
+    }
+
+    const soonest = [...normalized.arrivals].sort((a, b) => a.estimateArrive - b.estimateArrive).slice(0, 2);
+    renderFavoriteCardPreviewItems(previewEl, soonest, network);
+  } catch {
+    // Best-effort: si falla, se avisa discretamente en el propio hueco de la vista previa en
+    // vez de con el status de error de toda la app — no es la búsqueda que ha pedido el
+    // usuario explícitamente, es un vistazo de fondo dentro de una tarjeta.
+    previewEl.className = 'favorite-card__preview favorite-card__preview--empty';
+    previewEl.textContent = 'No se pudo cargar.';
+  }
+}
+
+function renderFavoriteCardPreviewEmpty(previewEl) {
+  previewEl.className = 'favorite-card__preview favorite-card__preview--empty';
+  previewEl.textContent = 'Sin buses ahora.';
+}
+
+function renderFavoriteCardPreviewItems(previewEl, arrivals, network) {
+  previewEl.className = 'favorite-card__preview';
+  previewEl.innerHTML = '';
+  for (const arrival of arrivals) {
+    const item = document.createElement('span');
+    item.className = 'favorite-card__preview-item';
+
+    const line = document.createElement('span');
+    line.className = 'favorite-card__preview-line';
+    line.dataset.network = network;
+    line.textContent = arrival.line;
+
+    const eta = document.createElement('span');
+    eta.className = `favorite-card__preview-eta ${etaClass(arrival.estimateArrive, network)}`;
+    eta.textContent = formatEta(arrival.estimateArrive, network);
+
+    item.append(line, eta);
+    previewEl.appendChild(item);
+  }
 }
 
 function startAutoRefresh() {
