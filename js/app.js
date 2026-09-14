@@ -337,9 +337,6 @@ async function fetchArrivals(stopId, network) {
     }
 
     const normalized = network === 'crtm' ? normalizeCrtm(payload) : normalizeEmt(payload);
-    if (!normalized) {
-      throw new Error('La API no devolvió datos para esta parada.');
-    }
 
     renderArrivals(normalized, network);
   } catch (err) {
@@ -358,10 +355,14 @@ async function fetchArrivals(stopId, network) {
 // estimateArrive, DistanceBus?}] } para que el resto del pintado no tenga que saber de
 // dónde vino cada dato.
 function normalizeEmt(payload) {
+  // Con code:'00' (éxito) EMT puede devolver "data" vacío para una parada real que
+  // simplemente no tiene tiempos reales ni programados ahora mismo (confirmado: otras apps
+  // muestran esto como un estado normal, no como "parada no encontrada"). Antes esto se
+  // trataba como error duro por no distinguir "sin datos ahora" de "parada inválida" —
+  // lo segundo ya lo cubre el chequeo de payload.code en fetchArrivals antes de llegar aquí.
   const stopData = payload.data?.[0];
-  if (!stopData) return null;
-  const stopInfo = stopData.StopInfo?.[0];
-  return { stopName: stopInfo?.stopName || null, arrivals: stopData.Arrive ?? [] };
+  const stopInfo = stopData?.StopInfo?.[0];
+  return { stopName: stopInfo?.stopName || null, arrivals: stopData?.Arrive ?? [] };
 }
 
 function normalizeCrtm(payload) {
