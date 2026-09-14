@@ -115,10 +115,12 @@ shareBtn.addEventListener('click', async () => {
 
   try {
     await navigator.clipboard.writeText(shareData.url);
-    const original = shareBtn.textContent;
+    // El botón lleva un SVG (icono de compartir), no texto — hay que guardar/restaurar todo
+    // el markup con innerHTML, textContent lo dejaría vacío al no haber ningún nodo de texto.
+    const originalHTML = shareBtn.innerHTML;
     shareBtn.textContent = '✓';
     setTimeout(() => {
-      shareBtn.textContent = original;
+      shareBtn.innerHTML = originalHTML;
     }, 1500);
   } catch {
     // Sin Web Share API ni portapapeles (contexto no seguro, permiso denegado…): no queda
