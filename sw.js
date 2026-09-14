@@ -14,7 +14,7 @@
 // segundo plano sin necesidad de subir esto, pero entonces nadie se entera del cambio hasta
 // la siguiente vez que abra la app de cero: subir la versión aquí en cada despliegue con
 // cambios visibles es lo que hace que salga el aviso.
-const CACHE_NAME = 'busya-v1.3.4';
+const CACHE_NAME = 'busya-v1.3.5';
 const SHELL_FILES = [
   '/',
   '/index.html',
