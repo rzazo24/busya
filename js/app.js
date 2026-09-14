@@ -6,6 +6,7 @@ const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 
 const form = document.getElementById('stop-form');
 const stopInput = document.getElementById('stop-id');
+const searchBtn = document.getElementById('search-btn');
 const statusEl = document.getElementById('status');
 const resultsEl = document.getElementById('results');
 const stopNameEl = document.getElementById('stop-name');
@@ -84,6 +85,7 @@ function setNetwork(network) {
     btn.setAttribute('aria-selected', String(active));
   });
   stopInput.placeholder = network === 'crtm' ? 'Ej. 06002' : 'Ej. 72';
+  searchBtn.classList.toggle('network-emt', network === 'emt');
 }
 
 function searchStop(stopId, network = currentNetwork) {
