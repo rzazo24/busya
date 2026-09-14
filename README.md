@@ -45,7 +45,8 @@ tienen relación con la numeración de EMT: un mismo número puede ser una parad
 cada red, por eso el buscador tiene un selector de red. CRTM da la hora absoluta de paso en
 vez de segundos restantes (se calcula en el proxy) y no distingue tiempo real de programado
 con un sentinel como EMT, así que puede dar esperas de varias horas de madrugada sin que sea
-un error.
+un error. En las dos redes, a partir de 45 min de espera el tiempo se muestra como la hora de
+paso (HH:MM) en vez de una cuenta atrás larga.
 
 Las líneas de EMT se muestran en azul y las de Interurbano en verde — el mismo color que
 llevan esos autobuses en la calle. La distancia del bus en Interurbano es aproximada (línea
@@ -62,15 +63,20 @@ parada en las dos redes no se confunde. Desde el botón ♥ de la cabecera se ab
 una tarjeta por parada favorita, donde se puede renombrar (input editable), reordenar (↑/↓) y
 saltar directamente a sus tiempos de paso.
 
+También se pueden marcar líneas como favoritas tocando su número en la lista de tiempos de
+paso: se resaltan con un anillo dorado y suben al principio de la lista de esa parada (como
+mucho las 3 próximas llegadas de cada línea, para no tapar el próximo bus real de otra línea
+con una llegada lejana de la favorita).
+
 ## PWA
 
 Instalable desde el navegador ("Añadir a pantalla de inicio" / el aviso de instalación de
 Chrome) y funciona sin conexión gracias a un service worker (`sw.js`) que cachea el shell
 estático (HTML/CSS/JS/manifest/iconos) con una estrategia stale-while-revalidate — nunca los
-tiempos de paso en sí, que siempre se piden en vivo. Se auto-actualiza: al detectar una
-versión nueva del service worker, recarga la pestaña una vez; y revisa si hay actualización
-cada vez que la app vuelve a primer plano, no solo con la frecuencia por defecto del
-navegador (~24h).
+tiempos de paso en sí, que siempre se piden en vivo. Revisa si hay actualización cada vez que
+la app vuelve a primer plano, no solo con la frecuencia por defecto del navegador (~24h); al
+detectar una versión nueva, avisa con un mensaje y un botón "Recargar" en vez de recargar la
+pestaña sola, para no cortar una búsqueda a medias.
 
 ## Estructura
 
