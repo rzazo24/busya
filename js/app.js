@@ -664,13 +664,17 @@ function hasReliableEta(seconds, network) {
   return seconds <= MAX_RELIABLE_ETA_SECONDS;
 }
 
+// A partir de aquí, la cuenta atrás en minutos es menos útil que saber directamente a qué
+// hora pasa — nadie se queda mirando el contador 50 minutos, y una hora de reloj se recuerda
+// sin volver a abrir la app.
+const CLOCK_TIME_THRESHOLD_SECONDS = 45 * 60;
+
 function formatEta(seconds, network) {
   if (!hasReliableEta(seconds, network)) return 'Sin estimación';
   if (seconds < 60) return 'Llegando';
-  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.round((seconds % 3600) / 60);
-  return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+  if (seconds < CLOCK_TIME_THRESHOLD_SECONDS) return `${Math.round(seconds / 60)} min`;
+  const arrivalTime = new Date(Date.now() + seconds * 1000);
+  return arrivalTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
 function etaClass(seconds, network) {
