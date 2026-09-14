@@ -51,6 +51,15 @@ let stopScheduleName = null; // Nombre real de la parada, por si /arrives/ no lo
 // marcar una línea como favorita sin volver a pedir datos a la API.
 let lastArrivals = [];
 
+// Parada+red que hay realmente pintada en pantalla ahora mismo (a diferencia de
+// currentStopId/currentNetwork, que ya apuntan a la búsqueda en curso desde antes de que
+// responda) y cuándo se pintó, para poder distinguir "esta parada ya tenía datos buenos, no
+// los borres por un fallo puntual" de "esto que se ve en pantalla es de otra parada distinta,
+// ya no vale" — ver fetchArrivals.
+let renderedStopId = null;
+let renderedNetwork = null;
+let lastSuccessAt = null;
+
 networkToggleBtns.forEach((btn) => {
   btn.addEventListener('click', () => setNetwork(btn.dataset.network));
 });
@@ -567,18 +576,42 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
     renderArrivals(normalized, network);
   } catch (err) {
     if (!isCurrentRequest(stopId, network)) return;
+    console.error(`Petición de la parada ${stopId} falló:`, err.message);
+
+    // Si lo que hay en pantalla ahora mismo es justo de esta misma parada (una carga o
+    // refresco anterior que sí funcionó), es mejor dejarlo y avisar de que está desactualizado
+    // que borrarlo por un fallo puntual de red — sigue siendo útil aunque ya no se pueda
+    // actualizar en este momento. Si lo que se ve es de otra parada distinta (p.ej. una
+    // búsqueda nueva que falla con los resultados de la anterior aún visibles), no aplica:
+    // eso hay que seguir avisándolo como error, no dejarlo ahí puesto por otra parada.
+    const hasMatchingDataShown = !resultsEl.hidden && renderedStopId === stopId && renderedNetwork === network;
+    if (hasMatchingDataShown) {
+      showOfflineNotice();
+      return;
+    }
 
     // isFirstLoad (nada en pantalla aún) o isExplicitSearch (el usuario pidió justo esta
     // parada, aunque hubiera resultados de otra parada anterior todavía visibles) siempre
-    // muestran el error. Solo el refresco automático en segundo plano de la MISMA parada se
-    // traga fallos puntuales en silencio, para no tapar datos buenos por un hipo pasajero.
+    // muestran el error. Solo el refresco automático en segundo plano se traga fallos
+    // puntuales en silencio (ya registrado arriba en consola) cuando tampoco hay datos
+    // propios de esta parada que conservar.
     if (isFirstLoad || isExplicitSearch) {
       showStatus(`No se pudo obtener la parada ${stopId}: ${err.message}`, 'error');
       resultsEl.hidden = true;
-    } else {
-      console.error(`Refresco de la parada ${stopId} falló:`, err.message);
     }
   }
+}
+
+// A partir de aquí los tiempos ya en pantalla pueden estar desactualizados — se avisa en el
+// mismo sitio donde se dice "Actualizado HH:MM:SS" en vez de con un aviso aparte, ya que dice
+// justo lo mismo (cuándo son los datos que se están viendo) solo que ahora no se pueden dar
+// por buenos. Se limpia solo en el próximo renderArrivals que funcione (refresco automático
+// de 30s incluido), sin que haga falta ningún reintento manual.
+function showOfflineNotice() {
+  const minutes = lastSuccessAt ? Math.max(0, Math.round((Date.now() - lastSuccessAt.getTime()) / 60_000)) : null;
+  const agoText = minutes == null ? '' : minutes < 1 ? 'de hace un momento' : `de hace ${minutes} min`;
+  lastUpdatedEl.textContent = `Sin conexión — datos ${agoText}`.trim();
+  lastUpdatedEl.classList.add('last-updated--offline');
 }
 
 // Ambas redes se reducen a la misma forma { stopName, arrivals: [{line, destination,
@@ -628,7 +661,11 @@ function renderArrivals(normalized, network) {
   lastArrivals = arrivals;
   renderArrivalsList(arrivals, network);
 
-  lastUpdatedEl.textContent = `Actualizado ${formatTime(new Date())}`;
+  renderedStopId = currentStopId;
+  renderedNetwork = network;
+  lastSuccessAt = new Date();
+  lastUpdatedEl.classList.remove('last-updated--offline');
+  lastUpdatedEl.textContent = `Actualizado ${formatTime(lastSuccessAt)}`;
   hideStatus();
   resultsEl.hidden = false;
 }

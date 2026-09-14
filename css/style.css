@@ -289,6 +289,14 @@ main {
   letter-spacing: 0.5px;
 }
 
+/* Cuando un fallo de red no borra los tiempos ya en pantalla (ver showOfflineNotice en
+   app.js), este mismo texto avisa de que ya no se puede dar por buenos — mismo naranja que
+   el resto de avisos de la app, no el rojo de un error real: los datos siguen ahí, solo que
+   podrían estar desactualizados. */
+.last-updated--offline {
+  color: var(--orange);
+}
+
 .help-btn {
   width: 22px;
   height: 22px;

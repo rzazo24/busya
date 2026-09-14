@@ -92,6 +92,13 @@ la app vuelve a primer plano, no solo con la frecuencia por defecto del navegado
 detectar una versión nueva, avisa con un mensaje y un botón "Recargar" en vez de recargar la
 pestaña sola, para no cortar una búsqueda a medias.
 
+Si un refresco de los tiempos de paso falla (sin conexión, la API caída un momento…) y ya
+había datos de esa misma parada en pantalla, se mantienen tal cual con el aviso "Sin conexión
+— datos de hace X min" en vez de borrarlos con un error — sigue siendo útil aunque esté algo
+desactualizado. Se limpia solo en el siguiente refresco que funcione. Si en cambio se busca
+una parada distinta y esa falla, sí se avisa como error de verdad: dejar puestos los datos de
+otra parada distinta sin más contexto sería confuso, no útil.
+
 ## Estructura
 
 ```
