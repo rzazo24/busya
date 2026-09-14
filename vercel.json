@@ -5,6 +5,9 @@
     },
     "api/crtm-arrives.js": {
       "maxDuration": 10
+    },
+    "api/nearby-stops.js": {
+      "maxDuration": 10
     }
   }
 }

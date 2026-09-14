@@ -54,6 +54,14 @@ recta entre dos coordenadas GPS, no la ruta real): se calcula con una llamada ad
 `GetLineLocation.php` por cada línea+sentido que aparece en los resultados, y se marca con
 "~" en la interfaz para dejar claro que no es exacta como el `DistanceBus` real de EMT.
 
+## Paradas cercanas
+
+"📍 Buscar paradas cerca de mí" pide permiso de ubicación al navegador y muestra las paradas
+de las dos redes a menos de 300 m, ordenadas por distancia, con sus líneas — toca una para ver
+sus tiempos. El backend (`api/nearby-stops.js`) reutiliza el propio agregador de CRTM
+(`GetNearestStopsByLocation.php`), que también indexa las paradas de EMT: no hace falta un
+endpoint de geolocalización propio de EMT, que no lo expone en su API pública.
+
 ## Favoritos
 
 Se guardan solo en `localStorage`, sin cuentas ni servidor — no se sincronizan entre
@@ -85,9 +93,11 @@ busya/
 ├── api/
 │   ├── emt-arrives.js       # GET /api/emt-arrives?stopId= — tiempos de paso EMT en tiempo real
 │   ├── emt-stop-detail.js   # GET /api/emt-stop-detail?stopId= — horario/frecuencia por línea (EMT)
-│   └── crtm-arrives.js      # GET /api/crtm-arrives?stopId= — tiempos de paso + distancia interurbanos (CRTM)
+│   ├── crtm-arrives.js      # GET /api/crtm-arrives?stopId= — tiempos de paso + distancia interurbanos (CRTM)
+│   └── nearby-stops.js      # GET /api/nearby-stops?lat=&lon= — paradas EMT+CRTM cercanas a una coordenada
 ├── lib/
-│   └── emt-client.js        # Login + caché de accessToken, compartido por las dos funciones de EMT
+│   ├── emt-client.js        # Login + caché de accessToken, compartido por las dos funciones de EMT
+│   └── geo.js                # Distancia entre coordenadas GPS, compartida por crtm-arrives.js y nearby-stops.js
 ├── css/
 │   └── style.css
 ├── js/

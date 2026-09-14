@@ -7,6 +7,8 @@
 // cabeceras CORS, así que un fetch directo desde el navegador falla; este proxy solo existe
 // para saltar esa restricción, no para esconder ningún secreto.
 
+import { haversineMeters } from '../lib/geo.js';
+
 const CRTM_BASE = 'https://www.crtm.es/widgets/api';
 
 // 8 = "AUTOBUSES INTERURBANOS" en GetModes.php de CRTM (4=Metro, 5=Cercanías, 6=EMT,
@@ -64,17 +66,6 @@ async function fetchItineraryCode(codLine, direction) {
   // aproximada (el primer itinerario que haya) que ninguna.
   const match = list.find((it) => Number(it.direction) === Number(direction));
   return match?.codItinerary ?? list[0]?.codItinerary ?? null;
-}
-
-function haversineMeters(a, b) {
-  const R = 6_371_000;
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const dLat = toRad(b.latitude - a.latitude);
-  const dLon = toRad(b.longitude - a.longitude);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
-  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
 }
 
 async function fetchVehicleDistanceMeters(codLine, direction, codStop, stopCoords) {

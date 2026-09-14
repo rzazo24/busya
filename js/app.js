@@ -30,6 +30,10 @@ const favoritesEmptyEl = document.getElementById('favorites-empty');
 const networkToggleBtns = document.querySelectorAll('.network-toggle__btn');
 const updateBanner = document.getElementById('update-banner');
 const updateReloadBtn = document.getElementById('update-reload-btn');
+const nearbyBtn = document.getElementById('nearby-btn');
+const nearbyResultsEl = document.getElementById('nearby-results');
+const nearbyCloseBtn = document.getElementById('nearby-close');
+const nearbyListEl = document.getElementById('nearby-list');
 
 let refreshTimer = null;
 let currentStopId = null;
@@ -149,6 +153,7 @@ function setNetwork(network) {
 }
 
 function searchStop(stopId, network = currentNetwork) {
+  nearbyResultsEl.hidden = true;
   setNetwork(network);
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
@@ -211,6 +216,99 @@ function dayTypeForToday() {
   if (day === 0) return 'FE';
   if (day === 6) return 'SA';
   return 'LA';
+}
+
+// Paradas cercanas: no hace falta saber el número de parada, solo dar permiso de ubicación.
+// api/nearby-stops.js ya mezcla EMT e Interurbano en una sola lista ordenada por distancia,
+// así que aquí no hay que filtrar por la red activa del selector.
+const GEOLOCATION_ERROR_MESSAGES = {
+  1: 'Has denegado el permiso de ubicación — puedes escribir el número de parada a mano.',
+  2: 'No se ha podido determinar tu ubicación.',
+  3: 'La búsqueda de tu ubicación ha tardado demasiado.',
+};
+
+nearbyBtn.addEventListener('click', searchNearbyStops);
+nearbyCloseBtn.addEventListener('click', () => { nearbyResultsEl.hidden = true; });
+
+function searchNearbyStops() {
+  if (!('geolocation' in navigator)) {
+    nearbyResultsEl.hidden = true;
+    showStatus('Este navegador no admite geolocalización.', 'error');
+    return;
+  }
+
+  resultsEl.hidden = true;
+  nearbyResultsEl.hidden = true;
+  showStatus('Buscando tu ubicación…', 'loading');
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      showStatus('Buscando paradas cercanas…', 'loading');
+      try {
+        const { latitude, longitude } = position.coords;
+        const res = await fetch(`/api/nearby-stops?lat=${latitude}&lon=${longitude}`);
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error || `Error ${res.status}`);
+        renderNearbyList(payload.stops ?? []);
+      } catch (err) {
+        showStatus(`No se han podido buscar paradas cercanas: ${err.message}`, 'error');
+      }
+    },
+    (err) => {
+      showStatus(GEOLOCATION_ERROR_MESSAGES[err.code] ?? 'No se ha podido obtener tu ubicación.', 'error');
+    },
+    { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
+  );
+}
+
+function renderNearbyList(stops) {
+  if (stops.length === 0) {
+    showStatus('No se han encontrado paradas a menos de 300 m.', 'error');
+    return;
+  }
+
+  hideStatus();
+  nearbyListEl.innerHTML = '';
+
+  for (const stop of stops) {
+    const li = document.createElement('li');
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nearby-stop';
+    btn.addEventListener('click', () => {
+      stopInput.value = stop.stopId;
+      searchStop(stop.stopId, stop.network);
+    });
+
+    const top = document.createElement('span');
+    top.className = 'nearby-stop__top';
+
+    const badge = document.createElement('span');
+    badge.className = 'nearby-stop__network';
+    badge.dataset.network = stop.network;
+    badge.textContent = FAVORITE_NETWORK_LABELS[stop.network] ?? stop.network;
+
+    const name = document.createElement('span');
+    name.className = 'nearby-stop__name';
+    name.textContent = stop.name || `Parada ${stop.stopId}`;
+
+    const distance = document.createElement('span');
+    distance.className = 'nearby-stop__distance';
+    distance.textContent = formatDistance(stop.distanceMeters);
+
+    top.append(badge, name, distance);
+
+    const lines = document.createElement('span');
+    lines.className = 'nearby-stop__lines';
+    lines.textContent = stop.lines.join(' · ');
+
+    btn.append(top, lines);
+    li.appendChild(btn);
+    nearbyListEl.appendChild(li);
+  }
+
+  nearbyResultsEl.hidden = false;
 }
 
 // Favoritos: solo en localStorage de este navegador (ver panel de ayuda) — sin cuentas
