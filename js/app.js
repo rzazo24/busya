@@ -415,6 +415,14 @@ function startAutoRefresh() {
   }, REFRESH_INTERVAL_MS);
 }
 
+// Si se selecciona una parada y enseguida otra (p.ej. un favorito de EMT y justo después uno
+// de CRTM) quedan dos peticiones en vuelo a la vez; sin esta comprobación, la que tarde más
+// en responder —aunque sea la vieja— pisa igualmente la pantalla al llegar, incluso pudiendo
+// mostrar un error de una parada que ya no es la que se está mirando.
+function isCurrentRequest(stopId, network) {
+  return stopId === currentStopId && network === currentNetwork;
+}
+
 async function fetchArrivals(stopId, network, isExplicitSearch = false) {
   // Solo se muestra "Buscando parada…" en la primera carga (resultsEl aún oculto). En los
   // refrescos de cada 30s el panel ya está visible con datos: mostrar y ocultar ese aviso en
@@ -426,6 +434,8 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
     const endpoint = network === 'crtm' ? '/api/crtm-arrives' : '/api/emt-arrives';
     const res = await fetch(`${endpoint}?stopId=${encodeURIComponent(stopId)}`);
     const payload = await res.json();
+
+    if (!isCurrentRequest(stopId, network)) return;
 
     if (!res.ok) {
       throw new Error(payload.error || `Error ${res.status}`);
@@ -447,6 +457,8 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
 
     renderArrivals(normalized, network);
   } catch (err) {
+    if (!isCurrentRequest(stopId, network)) return;
+
     // isFirstLoad (nada en pantalla aún) o isExplicitSearch (el usuario pidió justo esta
     // parada, aunque hubiera resultados de otra parada anterior todavía visibles) siempre
     // muestran el error. Solo el refresco automático en segundo plano de la MISMA parada se
