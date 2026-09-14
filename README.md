@@ -15,7 +15,7 @@ Segundo proyecto de una serie de apps con APIs públicas para portfolio, junto a
 tracker de vuelos vía OpenSky se descartó por restricciones de la API antes de llegar a nada
 publicable).
 
-![Captura de BusYa: buscador de parada con selector EMT/Interurbano y tiempos de paso de la EMT en Pza. Castilla](screenshot.png)
+![Captura de BusYa: tiempos de paso de la EMT en Pza. Castilla, con la línea 66 marcada como favorita y el botón de paradas cercanas](screenshot.png)
 
 ## Stack
 
