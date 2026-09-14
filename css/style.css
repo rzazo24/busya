@@ -457,9 +457,12 @@ main {
 }
 
 /* .favorite-card reutiliza .panel (fondo, borde, radio, sombra) — cada favorito es su
-   propia tarjeta apilada, no una fila dentro de un único panel grande. */
+   propia tarjeta apilada, no una fila dentro de un único panel grande. Padding vertical
+   más ajustado que el de .panel (16px) para que la tarjeta no quede tan alta. */
 .favorite-card {
   margin-top: 0;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .favorite-card__header {
@@ -502,8 +505,8 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px dashed var(--grid);
   font-size: 12px;
   color: var(--text-dim);
