@@ -115,6 +115,8 @@ busya/
 │   └── style.css
 ├── js/
 │   └── app.js                # Selector de red, búsqueda, refresco de 30s, favoritos, PWA
+├── scripts/
+│   └── smoke-test.mjs        # npm test — smoke test de extremo a extremo con Playwright
 ├── icons/                    # Iconos de la PWA (192/512/512-maskable/apple-touch-icon)
 ├── index.html
 ├── favicon.svg
@@ -146,6 +148,21 @@ busya/
 
 3. Abre `http://localhost:3000`, elige la red (EMT o Interurbano) e introduce un número de
    parada para consultar los tiempos de paso.
+
+## Tests
+
+```bash
+npm install
+npm test
+```
+
+Smoke test de extremo a extremo con Playwright (`scripts/smoke-test.mjs`): levanta un
+servidor local propio (sin el CLI de Vercel) que monta el sitio estático y los handlers
+reales de `api/*.js`, y comprueba los caminos principales de la app — buscar una parada real
+de CRTM y de EMT, favoritos de parada y de línea, enlace directo, paradas cercanas por
+geolocalización, el aviso de "sin conexión" y el registro del service worker. CRTM se prueba
+contra la API real (pública, sin credenciales); sin `EMT_EMAIL`/`EMT_PASSWORD` en
+`.env.local`, las comprobaciones de EMT se omiten en vez de simularse.
 
 ## Despliegue en Vercel
 

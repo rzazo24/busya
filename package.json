@@ -9,6 +9,10 @@
     "node": ">=18"
   },
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "test": "node scripts/smoke-test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
   }
 }
