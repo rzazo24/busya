@@ -28,6 +28,8 @@ const favoritesOverlay = document.getElementById('favorites-overlay');
 const favoritesManageListEl = document.getElementById('favorites-manage-list');
 const favoritesEmptyEl = document.getElementById('favorites-empty');
 const networkToggleBtns = document.querySelectorAll('.network-toggle__btn');
+const updateBanner = document.getElementById('update-banner');
+const updateReloadBtn = document.getElementById('update-reload-btn');
 
 let refreshTimer = null;
 let currentStopId = null;
@@ -716,6 +718,12 @@ if (lastStopId) {
 // funcione sin conexión. Si el registro falla (p.ej. servido por HTTP en algún entorno
 // local) no es grave: se registra en consola y ya está, la app sigue funcionando igual.
 if ('serviceWorker' in navigator) {
+  // En la primera visita de siempre no hay ningún controller todavía; clients.claim() del
+  // propio sw.js hace que ESA primera instalación también dispare "controllerchange" más
+  // abajo, aunque no sea ninguna actualización real. Sin esta comprobación, cualquiera que
+  // abriera la app por primera vez vería el aviso de "versión nueva disponible" sin sentido.
+  const hadControllerBeforeRegister = Boolean(navigator.serviceWorker.controller);
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch((err) => console.error('SW registration failed', err));
   });
@@ -723,15 +731,17 @@ if ('serviceWorker' in navigator) {
   // sw.js llama a skipWaiting()/clients.claim(), así que una versión nueva toma el control
   // de una pestaña ya abierta de inmediato — pero esa pestaña sigue con el html/css/js
   // antiguo ya cargado en memoria hasta que se recarga. "controllerchange" se dispara justo
-  // en ese momento, así que se recarga una vez para coger el shell nuevo; si no, una PWA
-  // dejada abierta un tiempo seguiría corriendo código viejo sin enterarse. Con guarda para
-  // no disparar dos veces, ya que el evento en teoría puede repetirse.
-  let reloadedForUpdate = false;
+  // en ese momento; en vez de recargar solo (podría cortar a media búsqueda o al escribir un
+  // número de parada), se avisa con un botón y se recarga cuando el usuario quiera. Con
+  // guarda para no mostrar el aviso dos veces, ya que el evento en teoría puede repetirse.
+  let updateAvailable = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloadedForUpdate) return;
-    reloadedForUpdate = true;
-    window.location.reload();
+    if (updateAvailable || !hadControllerBeforeRegister) return;
+    updateAvailable = true;
+    updateBanner.hidden = false;
   });
+
+  updateReloadBtn.addEventListener('click', () => window.location.reload());
 
   // El navegador solo revisa sw.js en busca de cambios según su propio calendario (más o
   // menos cada 24h, o al navegar) — para una PWA que se reabre desde segundo plano en vez

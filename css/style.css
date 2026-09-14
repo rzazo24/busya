@@ -673,6 +673,10 @@ main {
   .arrival-item__line:not(.arrival-item__line--favorite):hover {
     box-shadow: 0 0 0 2px var(--text-dim);
   }
+
+  .update-banner button:hover {
+    opacity: 0.85;
+  }
 }
 
 @media (max-width: 480px) {
@@ -696,4 +700,44 @@ main {
     font-size: 7px;
     line-height: 1.5;
   }
+}
+
+.update-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Por encima de help/favorites-overlay (1000): un aviso de versión nueva debe verse
+     aunque el usuario tenga uno de esos paneles abierto. */
+  z-index: 1100;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+  background: var(--panel-bg);
+  border-top: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Mismo motivo que en .help-overlay: [hidden] y display:flex puestos directamente en la
+   misma clase empatan en especificidad, así que sin el :not() el aviso se vería aunque
+   tuviera el atributo hidden. */
+.update-banner:not([hidden]) {
+  display: flex;
+}
+
+.update-banner button {
+  padding: 6px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #06170a;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
 }
