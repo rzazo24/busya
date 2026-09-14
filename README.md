@@ -7,11 +7,15 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)
 
 Tiempos de paso en tiempo real de los buses urbanos de EMT Madrid y los interurbanos de la
-Comunidad de Madrid (CRTM) para una parada dada.
+Comunidad de Madrid (CRTM) para una parada dada, con favoritos y funcionando como PWA
+instalable en el móvil.
 
-Tercer proyecto de una serie de apps con APIs públicas para portfolio (junto a
-[Disaster Watch](https://github.com) con GDACS y un tracker de vuelos con OpenSky,
-este último cancelado por restricciones de la API).
+Segundo proyecto de una serie de apps con APIs públicas para portfolio, junto a
+[Disaster Watch](https://github.com/rzazo24/disaster-watch) con GDACS (un intento previo de
+tracker de vuelos vía OpenSky se descartó por restricciones de la API antes de llegar a nada
+publicable).
+
+![Captura de BusYa: buscador de parada con selector EMT/Interurbano y tiempos de paso de la EMT en Pza. Castilla](screenshot.png)
 
 ## Stack
 
@@ -43,6 +47,31 @@ vez de segundos restantes (se calcula en el proxy) y no distingue tiempo real de
 con un sentinel como EMT, así que puede dar esperas de varias horas de madrugada sin que sea
 un error.
 
+Las líneas de EMT se muestran en azul y las de Interurbano en verde — el mismo color que
+llevan esos autobuses en la calle. La distancia del bus en Interurbano es aproximada (línea
+recta entre dos coordenadas GPS, no la ruta real): se calcula con una llamada adicional a
+`GetLineLocation.php` por cada línea+sentido que aparece en los resultados, y se marca con
+"~" en la interfaz para dejar claro que no es exacta como el `DistanceBus` real de EMT.
+
+## Favoritos
+
+Se guardan solo en `localStorage`, sin cuentas ni servidor — no se sincronizan entre
+dispositivos ni sobreviven a borrar los datos del sitio (se explica en el panel de ayuda de
+la propia app). Cada favorito recuerda su red (EMT o Interurbano), así que un mismo número de
+parada en las dos redes no se confunde. Desde el botón ♥ de la cabecera se abre un panel con
+una tarjeta por parada favorita, donde se puede renombrar (input editable), reordenar (↑/↓) y
+saltar directamente a sus tiempos de paso.
+
+## PWA
+
+Instalable desde el navegador ("Añadir a pantalla de inicio" / el aviso de instalación de
+Chrome) y funciona sin conexión gracias a un service worker (`sw.js`) que cachea el shell
+estático (HTML/CSS/JS/manifest/iconos) con una estrategia stale-while-revalidate — nunca los
+tiempos de paso en sí, que siempre se piden en vivo. Se auto-actualiza: al detectar una
+versión nueva del service worker, recarga la pestaña una vez; y revisa si hay actualización
+cada vez que la app vuelve a primer plano, no solo con la frecuencia por defecto del
+navegador (~24h).
+
 ## Estructura
 
 ```
@@ -50,16 +79,22 @@ busya/
 ├── api/
 │   ├── emt-arrives.js       # GET /api/emt-arrives?stopId= — tiempos de paso EMT en tiempo real
 │   ├── emt-stop-detail.js   # GET /api/emt-stop-detail?stopId= — horario/frecuencia por línea (EMT)
-│   └── crtm-arrives.js      # GET /api/crtm-arrives?stopId= — tiempos de paso interurbanos (CRTM)
+│   └── crtm-arrives.js      # GET /api/crtm-arrives?stopId= — tiempos de paso + distancia interurbanos (CRTM)
 ├── lib/
 │   └── emt-client.js        # Login + caché de accessToken, compartido por las dos funciones de EMT
 ├── css/
 │   └── style.css
 ├── js/
-│   └── app.js                # Selector de red, búsqueda de parada, refresco de 30s, favoritos
+│   └── app.js                # Selector de red, búsqueda, refresco de 30s, favoritos, PWA
+├── icons/                    # Iconos de la PWA (192/512/512-maskable/apple-touch-icon)
 ├── index.html
 ├── favicon.svg
+├── manifest.webmanifest
+├── sw.js                     # Service worker: cachea el shell estático, nunca los tiempos de paso
+├── screenshot.png
 ├── .env.example
+├── vercel.json
+├── LICENSE
 └── package.json
 ```
 
