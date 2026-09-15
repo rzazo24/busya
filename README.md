@@ -120,6 +120,13 @@ API (EMT, Interurbano/CRTM y paradas cercanas) — útil para distinguir si un t
 cosa de la app o de la propia API en ese momento. Solo comprueba al abrir el panel o al pulsar
 "Comprobar de nuevo", nunca en segundo plano.
 
+## Animaciones
+
+Las 3 animaciones infinitas de la app (punto del logo, "Llegando" parpadeando en rojo, puntos
+de carga) respetan `prefers-reduced-motion` del sistema por defecto. El panel de ayuda tiene
+además un selector propio (Automático / Activadas / Desactivadas, guardado en `localStorage`)
+para forzarlas en cualquiera de los dos sentidos sin depender de los ajustes del sistema.
+
 ## Analíticas
 
 Vercel Web Analytics (visitas y Core Web Vitals, sin cookies ni datos personales) mediante

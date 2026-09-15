@@ -845,6 +845,28 @@ main {
   border-bottom: 1px dashed var(--accent);
 }
 
+.motion-pref-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.motion-pref-row label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#motion-pref {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: var(--font);
+  font-size: 12px;
+}
+
 .api-status-panel {
   position: relative;
   width: 100%;
@@ -1104,20 +1126,37 @@ main {
    carga) no aportan información que no esté ya en el color/texto — quien tenga activado
    "reducir movimiento" en el sistema (a menudo por sensibilidad al movimiento, no solo
    preferencia) las sigue viendo igual sin esto. Igual que el bloque de :hover/:active de
-   arriba, se agrupan aquí en vez de repartir la comprobación junto a cada regla suelta. */
+   arriba, se agrupan aquí en vez de repartir la comprobación junto a cada regla suelta.
+   El selector [data-motion="on"] (ver el selector de Animaciones del panel de ayuda, en
+   js/app.js) deja forzarlas activadas aunque el sistema pida lo contrario. */
 @media (prefers-reduced-motion: reduce) {
-  .brand-dot {
+  html:not([data-motion="on"]) .brand-dot {
     animation: none;
   }
 
-  .arrival-item__eta.eta-now {
+  html:not([data-motion="on"]) .arrival-item__eta.eta-now {
     animation: none;
   }
 
-  .loading-dots__dot {
+  html:not([data-motion="on"]) .loading-dots__dot {
     animation: none;
     opacity: 0.8;
   }
+}
+
+/* [data-motion="off"]: la misma preferencia pero forzada desde la app, fuera de la media
+   query para que gane sin importar lo que diga el sistema. */
+html[data-motion="off"] .brand-dot {
+  animation: none;
+}
+
+html[data-motion="off"] .arrival-item__eta.eta-now {
+  animation: none;
+}
+
+html[data-motion="off"] .loading-dots__dot {
+  animation: none;
+  opacity: 0.8;
 }
 
 @media (max-width: 480px) {

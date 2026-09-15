@@ -3,6 +3,7 @@ const LAST_STOP_STORAGE_KEY = 'busya:lastStopId';
 const LAST_NETWORK_STORAGE_KEY = 'busya:lastNetwork';
 const FAVORITES_STORAGE_KEY = 'busya:favorites';
 const FAVORITE_LINES_STORAGE_KEY = 'busya:favoriteLines';
+const MOTION_PREFERENCE_KEY = 'busya:motionPreference';
 const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 // Solo para el badge de red en las tarjetas de favoritos: ahí "CRTM" es más compacto que
 // "Interurbano" y ya lo reconoce quien mira esa lista. El toggle del buscador y los mensajes
@@ -74,6 +75,7 @@ const nearbyBtnIconEl = document.getElementById('nearby-btn-icon');
 const nearbyResultsEl = document.getElementById('nearby-results');
 const nearbyCloseBtn = document.getElementById('nearby-close');
 const nearbyListEl = document.getElementById('nearby-list');
+const motionPrefSelect = document.getElementById('motion-pref');
 
 // Los botones estáticos empiezan vacíos en el HTML — se rellenan aquí, una sola vez, en vez
 // de repetir el marcado del SVG también en el HTML (ver comentario de los ICON_* de arriba).
@@ -88,6 +90,31 @@ refreshBtn.innerHTML = ICON_REFRESH;
 shareBtn.innerHTML = ICON_SHARE;
 nearbyBtnIconEl.innerHTML = ICON_LOCATION;
 // favoriteBtn (♡/♥ según esté guardada o no) se rellena en updateFavoriteBtn(), no aquí.
+
+// Preferencia de animaciones (punto del logo, "Llegando" parpadeando, puntos de carga): por
+// defecto sigue el "reducir movimiento" del sistema (ver @media (prefers-reduced-motion) en
+// el CSS), pero se puede forzar activada o desactivada aparte desde aquí, sin tener que tocar
+// ajustes del sistema. El atributo data-motion en <html> es lo que decide en el CSS: "on"
+// fuerza las animaciones incluso con el sistema en modo reducido, "off" las quita siempre
+// (fuera de la media query, para que gane sin importar lo que diga el sistema), y "auto" dejar
+// que decida solo prefers-reduced-motion.
+function applyMotionPreference(pref) {
+  document.documentElement.setAttribute('data-motion', pref);
+}
+
+function getMotionPreference() {
+  return localStorage.getItem(MOTION_PREFERENCE_KEY) || 'auto';
+}
+
+const initialMotionPref = getMotionPreference();
+motionPrefSelect.value = initialMotionPref;
+applyMotionPreference(initialMotionPref);
+
+motionPrefSelect.addEventListener('change', () => {
+  const pref = motionPrefSelect.value;
+  localStorage.setItem(MOTION_PREFERENCE_KEY, pref);
+  applyMotionPreference(pref);
+});
 
 let refreshTimer = null;
 let currentStopId = null;
