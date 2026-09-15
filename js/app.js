@@ -19,11 +19,13 @@ const ICON_HEART =
 // El círculo grande de estos dos (help/info) se quitó a propósito: el propio .help-btn ya
 // dibuja su círculo (border-radius:50% + border), así que el SVG lo duplicaba justo por
 // dentro del borde del botón, dando un efecto de "círculo dentro de otro círculo" — se deja
-// solo el glifo (? / i), que ya queda centrado y enmarcado por el círculo del botón.
+// solo el glifo (? / i), que ya queda centrado y enmarcado por el círculo del botón. El
+// <g transform="scale(...)"> agranda el glifo un poco respecto al tamaño original (pensado
+// para caber dentro del círculo que ya no está) sin tener que retocar a mano cada coordenada.
 const ICON_HELP =
-  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.4 9.6c0-1.9 1.6-3.3 2.7-3.3 2 0 3.4 1.4 3.4 3.1 0 1.3-.7 2.1-1.8 2.8-.9.6-1.3 1-1.3 2v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.1" cy="16.9" r="1.05" fill="currentColor"/></svg>';
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><g transform="translate(12 12) scale(1.35) translate(-12 -12)"><path d="M9.4 9.6c0-1.9 1.6-3.3 2.7-3.3 2 0 3.4 1.4 3.4 3.1 0 1.3-.7 2.1-1.8 2.8-.9.6-1.3 1-1.3 2v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.1" cy="16.9" r="1.05" fill="currentColor"/></g></svg>';
 const ICON_INFO =
-  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="7.8" r="1.05" fill="currentColor"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><g transform="translate(12 12) scale(1.35) translate(-12 -12)"><circle cx="12" cy="7.8" r="1.05" fill="currentColor"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g></svg>';
 const ICON_CLOSE =
   '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const ICON_REFRESH =
