@@ -112,6 +112,34 @@ html, body {
   font-family: var(--font);
 }
 
+/* Scrollbar a juego con la paleta del tema en vez del gris por defecto del sistema, que
+   desentona con el fondo oscuro (o el claro) de la app — se nota tanto en la página entera
+   como en los paneles con su propio scroll interno (ayuda, favoritos, paradas cercanas).
+   scrollbar-width/-color cubre Firefox y el Chromium más reciente; ::-webkit-scrollbar es lo
+   que hace falta para el resto de navegadores basados en WebKit/Blink. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--grid) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--grid);
+  border-radius: 8px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
 body {
   display: flex;
   flex-direction: column;
