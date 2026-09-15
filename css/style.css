@@ -31,16 +31,18 @@
 
 /* Los paneles (ayuda/favoritos/estado de las APIs) mueven el foco al ✕ al abrirse — hace
    falta para que Tab funcione bien de entrada con teclado (ver trapFocusInPanel en
-   js/app.js) — pero esa misma llamada a .focus() hace que el navegador decida, con una
-   heurística no siempre consistente, si también le pone su anillo de foco azul por defecto
-   aunque el panel se haya abierto con un toque, no con teclado (visto de forma intermitente,
-   no siempre). :focus-visible sí distingue esto de forma fiable: solo aplica cuando el
-   navegador cree que el foco viene realmente de teclado. */
+   js/app.js) — pero esa misma llamada a .focus() puede hacer que el navegador pinte también
+   su anillo de foco azul por defecto aunque el panel se haya abierto con un toque, no con
+   teclado. Se probó primero con :focus-visible nativo, pero su heurística ("¿esto parece
+   teclado?") no es igual de fiable en todos los motores — confirmado en iOS que el anillo se
+   seguía viendo tras un simple toque, aunque en Chromium de escritorio sí lo distinguía bien.
+   Se controla a mano en su lugar con la clase "user-is-tabbing" (ver js/app.js): solo se
+   añade al <body> tras un Tab real y se quita con cualquier puntero (ratón o toque). */
 button:focus {
   outline: none;
 }
 
-button:focus-visible {
+body.user-is-tabbing button:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

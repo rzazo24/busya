@@ -332,11 +332,22 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (event.key === 'Tab') {
+    document.body.classList.add('user-is-tabbing');
     if (!helpOverlay.hidden) trapFocusInPanel(event, helpPanel);
     else if (!favoritesOverlay.hidden) trapFocusInPanel(event, favoritesPanel);
     else if (!apiStatusOverlay.hidden) trapFocusInPanel(event, apiStatusPanel);
   }
 });
+
+// El anillo de foco de abajo (ver ".user-is-tabbing" en css) no se deja en manos del
+// :focus-visible nativo del navegador: aunque en Chromium de escritorio distingue bien un
+// foco real de teclado de uno puesto por script (openOverlay hace closeBtn.focus() al abrir
+// un panel, incluso tocando en móvil), reportado en iOS que el anillo se seguía viendo tras
+// un simple toque — ese criterio no es igual de fiable en todos los motores. Se controla a
+// mano en su lugar: solo cuenta como "usando teclado" tras un Tab real (arriba), y cualquier
+// puntero (ratón o toque) lo desactiva enseguida.
+document.addEventListener('mousedown', () => document.body.classList.remove('user-is-tabbing'));
+document.addEventListener('touchstart', () => document.body.classList.remove('user-is-tabbing'), { passive: true });
 
 // Paradas reales usadas solo para medir latencia, no para mostrar sus tiempos: 07288 (varias
 // líneas de CRTM a la vez) y 3351 (parada real de EMT que en su día sacó a la luz el caso "No
