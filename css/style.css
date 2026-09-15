@@ -1276,7 +1276,7 @@ html[data-motion="off"] .loading-dots__dot {
   }
   .app-footer {
     padding: 0 16px max(8px, env(safe-area-inset-bottom));
-    font-size: 7px;
+    font-size: 9px;
     line-height: 1.5;
   }
 }
