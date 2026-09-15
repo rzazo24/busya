@@ -1100,6 +1100,26 @@ main {
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* Las 3 animaciones infinitas de la app (punto del logo, "Llegando" parpadeando, puntos de
+   carga) no aportan información que no esté ya en el color/texto — quien tenga activado
+   "reducir movimiento" en el sistema (a menudo por sensibilidad al movimiento, no solo
+   preferencia) las sigue viendo igual sin esto. Igual que el bloque de :hover/:active de
+   arriba, se agrupan aquí en vez de repartir la comprobación junto a cada regla suelta. */
+@media (prefers-reduced-motion: reduce) {
+  .brand-dot {
+    animation: none;
+  }
+
+  .arrival-item__eta.eta-now {
+    animation: none;
+  }
+
+  .loading-dots__dot {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
 @media (max-width: 480px) {
   .topbar {
     padding: max(16px, env(safe-area-inset-top)) 16px 16px;
