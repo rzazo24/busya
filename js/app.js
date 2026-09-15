@@ -340,7 +340,13 @@ function renderApiStatusRow(name, valueText, valueClass) {
 
   const valueEl = document.createElement('span');
   valueEl.className = `api-status-row__value ${valueClass}`;
-  valueEl.textContent = valueText;
+  if (valueClass === 'api-status-row__value--pending') {
+    // 3 puntos animados en vez de texto — ver comentario en .api-status-loading (css).
+    valueEl.innerHTML =
+      '<span class="api-status-loading" role="status" aria-label="Comprobando"><span class="api-status-loading__dot"></span><span class="api-status-loading__dot"></span><span class="api-status-loading__dot"></span></span>';
+  } else {
+    valueEl.textContent = valueText;
+  }
 
   li.append(nameEl, valueEl);
   return li;
@@ -349,7 +355,7 @@ function renderApiStatusRow(name, valueText, valueClass) {
 async function checkApiStatus() {
   apiStatusListEl.innerHTML = '';
   for (const check of API_STATUS_CHECKS) {
-    apiStatusListEl.appendChild(renderApiStatusRow(check.name, 'Comprobando…', 'api-status-row__value--pending'));
+    apiStatusListEl.appendChild(renderApiStatusRow(check.name, '', 'api-status-row__value--pending'));
   }
 
   const results = await Promise.all(API_STATUS_CHECKS.map(measureApiLatency));
