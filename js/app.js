@@ -775,11 +775,12 @@ async function loadFavoriteCardPreview(stopId, network, previewEl) {
     if (payload.code && payload.code !== '00') {
       // Mismo caso que en fetchArrivals: "No estimations found" es una parada real sin
       // tiempos ahora mismo, no un fallo.
-      if (network === 'emt' && /no estimations found/i.test(payload.description || '')) {
+      const description = network === 'emt' ? emtDescriptionText(payload.description) : payload.description;
+      if (network === 'emt' && /no estimations found/i.test(description || '')) {
         renderFavoriteCardPreviewEmpty(previewEl);
         return;
       }
-      throw new Error(payload.description || 'Error');
+      throw new Error(description || 'Error');
     }
 
     const normalized = network === 'crtm' ? normalizeCrtm(payload) : normalizeEmt(payload);
@@ -863,11 +864,12 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
       // description "No estimations found" para una parada real que simplemente no tiene
       // tiempos ahora mismo — no para una parada inválida. Otras apps de EMT lo tratan como
       // un estado normal (sin buses ahora), no como fallo, así que aquí también.
-      if (network === 'emt' && /no estimations found/i.test(payload.description || '')) {
+      const description = network === 'emt' ? emtDescriptionText(payload.description) : payload.description;
+      if (network === 'emt' && /no estimations found/i.test(description || '')) {
         renderArrivals({ stopName: null, arrivals: [] }, network);
         return;
       }
-      throw new Error(payload.description || `La API de ${NETWORK_LABELS[network]} devolvió un error`);
+      throw new Error(description || `La API de ${NETWORK_LABELS[network]} devolvió un error`);
     }
 
     const normalized = network === 'crtm' ? normalizeCrtm(payload) : normalizeEmt(payload);
@@ -911,6 +913,23 @@ function showOfflineNotice() {
   const agoText = minutes == null ? '' : minutes < 1 ? 'de hace un momento' : `de hace ${minutes} min`;
   lastUpdatedEl.textContent = `Sin conexión — datos ${agoText}`.trim();
   lastUpdatedEl.classList.add('last-updated--offline');
+}
+
+// La API de EMT no es consistente en el formato de "description": a veces es un string
+// plano ("No estimations found (lapsed: ...)"), pero para una parada que no existe/está
+// deshabilitada (code "80", confirmado en vivo con stopId "07289") es un array de objetos
+// localizados, [{ES:"..."},{EN:"..."}] — sin esto, un new Error(payload.description) sobre
+// ese array acababa mostrando el literal "[object Object],[object Object]" en pantalla en
+// vez de un mensaje legible.
+function emtDescriptionText(description) {
+  if (typeof description === 'string') return description;
+  if (Array.isArray(description)) {
+    const es = description.find((d) => d && typeof d === 'object' && 'ES' in d);
+    if (es) return es.ES;
+    const first = description.find((d) => d && typeof d === 'object');
+    if (first) return Object.values(first)[0];
+  }
+  return null;
 }
 
 // Ambas redes se reducen a la misma forma { stopName, arrivals: [{line, destination,
