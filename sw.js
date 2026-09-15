@@ -14,7 +14,7 @@
 // segundo plano sin necesidad de subir esto, pero entonces nadie se entera del cambio hasta
 // la siguiente vez que abra la app de cero: subir la versión aquí en cada despliegue con
 // cambios visibles es lo que hace que salga el aviso.
-const CACHE_NAME = 'busya-v1.3.10';
+const CACHE_NAME = 'busya-v1.3.11';
 const SHELL_FILES = [
   '/',
   '/index.html',
@@ -58,7 +58,11 @@ self.addEventListener('fetch', (event) => {
       cache.match(event.request).then((cached) => {
         const network = fetch(event.request.url, { cache: 'reload' })
           .then(async (response) => {
-            await cache.put(event.request, response.clone());
+            // Solo se cachea una respuesta buena: sin esto, un 500/404 pasajero justo en
+            // esta revalidación de fondo (un hipo de deploy, por ejemplo) se guardaría como
+            // si fuera contenido válido y se serviría así hasta la siguiente revalidación
+            // que funcionara.
+            if (response.ok) await cache.put(event.request, response.clone());
             return response;
           })
           .catch(() => cached);

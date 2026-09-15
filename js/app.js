@@ -605,7 +605,13 @@ function updateFavoriteBtn() {
   // ".icon-heart" en el CSS), en vez de textContent con dos caracteres Unicode distintos.
   if (!favoriteBtn.querySelector('svg')) favoriteBtn.innerHTML = ICON_HEART;
   favoriteBtn.classList.toggle('active', Boolean(active));
-  favoriteBtn.title = active ? 'Quitar de favoritos' : 'Guardar como favorita';
+  // aria-label además de title: un lector de pantalla usa aria-label con prioridad sobre
+  // title para el nombre accesible del botón, así que sin esto siempre anunciaría "Guardar
+  // como favorita" aunque la parada ya estuviera marcada (confirmado con Playwright: el
+  // title sí cambiaba, el aria-label se quedaba fijo desde el HTML estático).
+  const label = active ? 'Quitar de favoritos' : 'Guardar como favorita';
+  favoriteBtn.title = label;
+  favoriteBtn.setAttribute('aria-label', label);
 }
 
 function updateFavoriteName(stopId, network, name) {
