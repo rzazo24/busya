@@ -4,6 +4,7 @@ const LAST_NETWORK_STORAGE_KEY = 'busya:lastNetwork';
 const FAVORITES_STORAGE_KEY = 'busya:favorites';
 const FAVORITE_LINES_STORAGE_KEY = 'busya:favoriteLines';
 const MOTION_PREFERENCE_KEY = 'busya:motionPreference';
+const THEME_PREFERENCE_KEY = 'busya:themePreference';
 const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 // Solo para el badge de red en las tarjetas de favoritos: ahí "CRTM" es más compacto que
 // "Interurbano" y ya lo reconoce quien mira esa lista. El toggle del buscador y los mensajes
@@ -79,6 +80,7 @@ const nearbyResultsEl = document.getElementById('nearby-results');
 const nearbyCloseBtn = document.getElementById('nearby-close');
 const nearbyListEl = document.getElementById('nearby-list');
 const motionPrefSelect = document.getElementById('motion-pref');
+const themePrefSelect = document.getElementById('theme-pref');
 
 // Los botones estáticos empiezan vacíos en el HTML — se rellenan aquí, una sola vez, en vez
 // de repetir el marcado del SVG también en el HTML (ver comentario de los ICON_* de arriba).
@@ -117,6 +119,44 @@ motionPrefSelect.addEventListener('change', () => {
   const pref = motionPrefSelect.value;
   localStorage.setItem(MOTION_PREFERENCE_KEY, pref);
   applyMotionPreference(pref);
+});
+
+// Tema: mismo patrón que la preferencia de animaciones de arriba, pero el valor guardado por
+// defecto es "dark" en vez de "auto" — el oscuro es la identidad visual de BusYa desde el
+// principio, así que quien no toque el selector nunca ve la app cambiar de aspecto por sí
+// sola según el sistema. [data-theme] en <html> es lo que decide la paleta en el CSS (ver
+// :root/[data-theme="light"]/@media(prefers-color-scheme) en style.css); el <meta
+// name="theme-color"> (color de la barra del navegador/PWA) se actualiza aquí a mano porque
+// no hay forma de enlazarlo directamente a una custom property CSS.
+const THEME_COLORS = { dark: '#0a0f0a', light: '#eef2ea' };
+const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+function applyThemePreference(pref) {
+  document.documentElement.setAttribute('data-theme', pref);
+  const systemPrefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  const effective = pref === 'light' || (pref === 'auto' && systemPrefersLight) ? 'light' : 'dark';
+  if (themeColorMeta) themeColorMeta.setAttribute('content', THEME_COLORS[effective]);
+}
+
+function getThemePreference() {
+  return localStorage.getItem(THEME_PREFERENCE_KEY) || 'dark';
+}
+
+const initialThemePref = getThemePreference();
+themePrefSelect.value = initialThemePref;
+applyThemePreference(initialThemePref);
+
+themePrefSelect.addEventListener('change', () => {
+  const pref = themePrefSelect.value;
+  localStorage.setItem(THEME_PREFERENCE_KEY, pref);
+  applyThemePreference(pref);
+});
+
+// Si el sistema cambia de claro a oscuro (o al revés) con la app ya abierta y la preferencia
+// en "auto", el CSS ya reacciona solo (es una media query), pero el <meta name="theme-color">
+// no — sin esto se quedaría con el color del tema anterior hasta la próxima recarga.
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+  if (getThemePreference() === 'auto') applyThemePreference('auto');
 });
 
 let refreshTimer = null;

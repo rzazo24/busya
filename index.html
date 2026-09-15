@@ -110,8 +110,17 @@
         <p>El botón ⓘ de la cabecera abre un panel con cuánto tarda en responder ahora mismo
         cada API (EMT, CRTM y paradas cercanas) — útil para saber si un tiempo raro es cosa
         de la app o de la propia API en ese momento.</p>
+        <h3>Tema</h3>
+        <p class="settings-row">
+          <label for="theme-pref">Aspecto de la app:</label>
+          <select id="theme-pref">
+            <option value="dark">Oscuro</option>
+            <option value="light">Claro</option>
+            <option value="auto">Automático (según el sistema)</option>
+          </select>
+        </p>
         <h3>Animaciones</h3>
-        <p class="motion-pref-row">
+        <p class="settings-row">
           <label for="motion-pref">Punto del logo, "Llegando" parpadeando y puntos de carga:</label>
           <select id="motion-pref">
             <option value="auto">Automático (según el sistema)</option>
@@ -152,7 +161,7 @@
   </div>
 
   <footer class="app-footer">
-    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.4.2</p>
+    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.5.0</p>
   </footer>
 
   <div id="update-banner" class="update-banner" hidden role="status" aria-live="polite">

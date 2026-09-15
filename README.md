@@ -126,6 +126,15 @@ API (EMT, Interurbano/CRTM y paradas cercanas) — útil para distinguir si un t
 cosa de la app o de la propia API en ese momento. Solo comprueba al abrir el panel o al pulsar
 "Comprobar de nuevo", nunca en segundo plano.
 
+## Tema
+
+Oscuro por defecto — la identidad visual de BusYa desde el principio — con un tema claro
+opcional que reutiliza la misma paleta semántica (verde de acento, azul EMT, dorado de línea
+favorita, rojo/naranja de aviso) reoscurecida para seguir siendo legible sobre fondo claro. El
+selector "Tema" del panel de ayuda (Oscuro / Claro / Automático según el sistema, guardado en
+`localStorage`) decide cuál se ve; quien no lo toque sigue viendo el oscuro de siempre, no
+cambia solo porque el sistema esté en modo claro.
+
 ## Animaciones
 
 Las 3 animaciones infinitas de la app (punto del logo, "Llegando" parpadeando en rojo, puntos

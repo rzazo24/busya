@@ -1,5 +1,12 @@
+/* Tema oscuro: el de siempre, y el que se ve por defecto aunque no se toque nada (ver
+   [data-theme] más abajo) — la identidad visual de BusYa ha sido esta desde el principio, así
+   que cambiarla por sorpresa según el sistema de quien la abre sería un cambio no pedido.
+   --bg-rgb/--red-rgb son la misma info que --bg/--red en formato "r, g, b" para poder
+   componer rgba(var(--bg-rgb), alpha) en vez de tener valores traslúcidos sueltos por el CSS
+   que solo tendrían sentido para este tema y no para el claro de abajo. */
 :root {
   --bg: #0a0f0a;
+  --bg-rgb: 10, 15, 10;
   --panel-bg: #0f1a10;
   --grid: #1a2e1c;
   --accent: #3ef27a;
@@ -8,6 +15,7 @@
   --green: #3ef27a;
   --orange: #ffb347;
   --red: #ff5d5d;
+  --red-rgb: 255, 93, 93;
   /* En Madrid los buses de EMT son azules y los interurbanos verdes — se usa ese mismo
      código de color para distinguir red en badges de línea, toggle y favoritos. El verde
      de interurbanos ya es --accent (el acento base de toda la app), así que solo hace
@@ -16,7 +24,56 @@
   /* Dorado reservado para "línea favorita" — distinto del --orange de aviso de ETA, para
      no mezclar "esta línea me interesa" con "este bus está a punto de llegar". */
   --gold: #ffd166;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --hover-tint: rgba(255, 255, 255, 0.03);
   --font: 'IBM Plex Mono', monospace;
+}
+
+/* Tema claro: misma paleta semántica (verde de acento, azul EMT, dorado de línea favorita,
+   rojo/naranja de aviso), reoscurecida donde hacía falta para seguir siendo legible sobre
+   fondo claro — el verde neón (#3ef27a) o el dorado (#ffd166) originales, por ejemplo,
+   prácticamente desaparecerían sobre blanco. --panel-bg blanco puro por encima de un --bg
+   con un tinte verde muy suave (no blanco puro) para que las tarjetas/paneles destaquen del
+   fondo, igual que --panel-bg ya destaca del --bg oscuro. Se activa con el selector
+   "Tema" del panel de ayuda (ver applyThemePreference en js/app.js): [data-theme="light"] lo
+   fuerza siempre, [data-theme="auto"] solo si además el sistema pide "claro" (más abajo, tras
+   la media query) — quien no toque el selector sigue viendo el oscuro de arriba. */
+:root[data-theme="light"] {
+  --bg: #eef2ea;
+  --bg-rgb: 238, 242, 234;
+  --panel-bg: #ffffff;
+  --grid: #d5ddd0;
+  --accent: #1a8f4c;
+  --text: #142016;
+  --text-dim: #5f7267;
+  --green: #1a8f4c;
+  --orange: #a15f06;
+  --red: #c1352f;
+  --red-rgb: 193, 53, 47;
+  --blue: #1c6fa8;
+  --gold: #8a6104;
+  --shadow: rgba(20, 32, 22, 0.12);
+  --hover-tint: rgba(20, 32, 22, 0.04);
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg: #eef2ea;
+    --bg-rgb: 238, 242, 234;
+    --panel-bg: #ffffff;
+    --grid: #d5ddd0;
+    --accent: #1a8f4c;
+    --text: #142016;
+    --text-dim: #5f7267;
+    --green: #1a8f4c;
+    --orange: #a15f06;
+    --red: #c1352f;
+    --red-rgb: 193, 53, 47;
+    --blue: #1c6fa8;
+    --gold: #8a6104;
+    --shadow: rgba(20, 32, 22, 0.12);
+    --hover-tint: rgba(20, 32, 22, 0.04);
+  }
 }
 
 * {
@@ -78,7 +135,7 @@ body {
   /* max() con env(safe-area-inset-top): en un navegador normal no cambia nada (el inset
      vale 0), pero en la PWA instalada evita que el notch/isla dinámica tape el título. */
   padding: max(22px, env(safe-area-inset-top)) 24px 22px;
-  background: rgba(10, 15, 10, 0.92);
+  background: rgba(var(--bg-rgb), 0.92);
   border-bottom: 1px solid var(--grid);
 }
 
@@ -289,7 +346,7 @@ main {
 .status--error {
   border-color: var(--red);
   color: var(--red);
-  background: rgba(255, 93, 93, 0.1);
+  background: rgba(var(--red-rgb), 0.1);
 }
 
 .panel {
@@ -298,7 +355,7 @@ main {
   border-radius: 6px;
   padding: 16px;
   margin-top: 12px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 20px var(--shadow);
 }
 
 .results__header {
@@ -512,7 +569,11 @@ main {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(10, 15, 10, 0.8);
+  /* Opaco del todo y no rgba(var(--bg-rgb), alpha) como el resto de fondos traslúcidos de la
+     app: con el tema claro nuevo, cualquier resto de transparencia aquí dejaba traslucir el
+     texto de detrás (el nombre de la parada bajo el panel) de forma bastante más visible que
+     en el oscuro original, donde apenas se notaba incluso con menos opacidad. */
+  background: var(--bg);
 }
 
 /* [hidden] y .help-overlay{display:flex} tienen la misma especificidad; sin este :not(),
@@ -867,19 +928,21 @@ main {
   border-bottom: 1px dashed var(--accent);
 }
 
-.motion-pref-row {
+/* Fila label+select genérica, reutilizada por los dos ajustes del panel de ayuda
+   (#motion-pref y #theme-pref) para no repetir el mismo layout dos veces. */
+.settings-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
-.motion-pref-row label {
+.settings-row label {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-#motion-pref {
+.settings-row select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--grid);
@@ -1092,7 +1155,7 @@ main {
   }
 
   .nearby-stop:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--hover-tint);
   }
 }
 
@@ -1151,7 +1214,7 @@ main {
 }
 
 .nearby-stop:active {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--hover-tint);
 }
 
 /* Las 3 animaciones infinitas de la app (punto del logo, "Llegando" parpadeando, puntos de
