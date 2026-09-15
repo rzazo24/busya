@@ -9,7 +9,7 @@
 // se prueban contra el servicio real, no contra datos inventados — la lección de esta sesión
 // es que un mock puede no coincidir con cómo se comporta la API real de verdad.
 //
-// EMT sí necesita credenciales (EMT_EMAIL/EMT_PASSWORD, de .env.local o del entorno); sin
+// EMT sí necesita credenciales (EMT_CLIENT_ID/EMT_PASSKEY, de .env.local o del entorno); sin
 // ellas, las comprobaciones que dependen de EMT se omiten en vez de fingir una respuesta.
 //
 // Al depender de la API real de CRTM, alguna comprobación puede fallar por su latencia
@@ -44,7 +44,7 @@ const MIME = {
 };
 
 loadEnvLocal();
-const hasEmtCreds = Boolean(process.env.EMT_EMAIL && process.env.EMT_PASSWORD);
+const hasEmtCreds = Boolean(process.env.EMT_CLIENT_ID && process.env.EMT_PASSKEY);
 
 const { default: crtmArrivesHandler } = await import(path.join(ROOT, 'api/crtm-arrives.js'));
 const { default: nearbyStopsHandler } = await import(path.join(ROOT, 'api/nearby-stops.js'));
@@ -102,7 +102,7 @@ try {
       })
     );
   } else {
-    skip('buscar una parada real de EMT', 'faltan EMT_EMAIL/EMT_PASSWORD (copia .env.example a .env.local)');
+    skip('buscar una parada real de EMT', 'faltan EMT_CLIENT_ID/EMT_PASSKEY (copia .env.example a .env.local)');
   }
 
   await check('guardar una parada como favorita y verla en el panel (con vista previa)', () =>
@@ -335,7 +335,7 @@ function startServer() {
       if (url.pathname === '/api/emt-arrives' || url.pathname === '/api/emt-stop-detail') {
         if (!emtHandlers) {
           res.writeHead(503, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: 'Faltan EMT_EMAIL/EMT_PASSWORD en este servidor de pruebas' }));
+          return res.end(JSON.stringify({ error: 'Faltan EMT_CLIENT_ID/EMT_PASSKEY en este servidor de pruebas' }));
         }
         const fn = url.pathname === '/api/emt-arrives' ? emtHandlers.arrives : emtHandlers.stopDetail;
         return fn({ query: { stopId: url.searchParams.get('stopId') } }, makeVercelRes(res));

@@ -28,9 +28,13 @@ publicable).
 
 ### EMT Madrid
 
-La API de EMT ([openapi.emtmadrid.es](https://openapi.emtmadrid.es)) requiere login con
-email/password para obtener un `accessToken` (válido ~1 hora), así que no se puede consumir
-100% desde el frontend estático sin exponer credenciales — de ahí el proxy.
+La API de EMT ([openapi.emtmadrid.es](https://openapi.emtmadrid.es)) requiere login para
+obtener un `accessToken`, así que no se puede consumir 100% desde el frontend estático sin
+exponer credenciales — de ahí el proxy. BusYa usa el login "Protected" (`X-ClientId` +
+`passKey` de una app registrada en [MobilityLabs](https://mobilitylabs.emtmadrid.es)) en vez
+del login básico con email/password de una cuenta personal: 250k peticiones/día en vez de
+25k, sesión de hasta 24h en vez de ~1h, y sin depender de la contraseña de ninguna cuenta
+personal.
 
 Cuando una línea no tiene tiempo real fiable (frecuente en líneas nocturnas sin GPS), el
 frontend cae a `/api/emt-stop-detail` y muestra la frecuencia de servicio de esa línea
@@ -156,12 +160,12 @@ busya/
 
 ## Desarrollo local
 
-1. Copia `.env.example` a `.env.local` y rellena tus credenciales de
-   [openapi.emtmadrid.es](https://openapi.emtmadrid.es) (email/password de tu cuenta):
+1. Copia `.env.example` a `.env.local` y rellena el `X-ClientId`/`passKey` de tu app
+   registrada en [MobilityLabs](https://mobilitylabs.emtmadrid.es):
 
    ```
-   EMT_EMAIL=tu_email@ejemplo.com
-   EMT_PASSWORD=tu_password
+   EMT_CLIENT_ID=tu_x-client-id
+   EMT_PASSKEY=tu_passkey
    ```
 
 2. Instala el CLI de Vercel si no lo tienes y levanta el entorno local (sirve el estático
@@ -186,15 +190,15 @@ servidor local propio (sin el CLI de Vercel) que monta el sitio estático y los 
 reales de `api/*.js`, y comprueba los caminos principales de la app — buscar una parada real
 de CRTM y de EMT, favoritos de parada y de línea, enlace directo, paradas cercanas por
 geolocalización, el aviso de "sin conexión" y el registro del service worker. CRTM se prueba
-contra la API real (pública, sin credenciales); sin `EMT_EMAIL`/`EMT_PASSWORD` en
+contra la API real (pública, sin credenciales); sin `EMT_CLIENT_ID`/`EMT_PASSKEY` en
 `.env.local`, las comprobaciones de EMT se omiten en vez de simularse.
 
 ## Despliegue en Vercel
 
 1. `npx vercel link` (o importa el repo desde el dashboard de Vercel).
 2. Configura las variables de entorno en el proyecto de Vercel (Settings → Environment Variables):
-   - `EMT_EMAIL`
-   - `EMT_PASSWORD`
+   - `EMT_CLIENT_ID`
+   - `EMT_PASSKEY`
 3. `npx vercel --prod`.
 
 No hace falta ningún paso de build: Vercel sirve `index.html`/`css`/`js` como estático y
