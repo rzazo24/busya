@@ -847,7 +847,7 @@ main {
 .api-status-row {
   display: flex;
   /* center, no baseline: el estado "pending" ya no es texto sino los puntos de
-     .api-status-loading, que no tienen línea base de texto propia con la que alinearse. */
+     .loading-dots, que no tienen línea base de texto propia con la que alinearse. */
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -892,32 +892,34 @@ main {
   color: var(--red);
 }
 
-/* Sustituye al texto "Comprobando…" mientras se mide la API: en móvil el texto en cursiva
-   se salía un poco de la fila (métrica de fuente + "…" con el ancho justo), un indicador
-   de tamaño fijo no tiene ese problema y además dice "cargando" sin depender del idioma. */
-.api-status-loading {
+/* Indicador de carga genérico (3 puntos animados) para huecos pequeños que antes mostraban
+   texto tipo "Comprobando…"/"Cargando…" en cursiva: ese texto se salía un poco en móvil
+   (métrica de fuente + "…" con el ancho justo), un indicador de tamaño fijo no tiene ese
+   problema y además no depende del idioma. Usado en el panel de Estado de las APIs y en la
+   vista previa de cada tarjeta de favorito. */
+.loading-dots {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-.api-status-loading__dot {
+.loading-dots__dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: currentColor;
-  animation: api-status-loading-bounce 1.2s infinite ease-in-out both;
+  animation: loading-dots-bounce 1.2s infinite ease-in-out both;
 }
 
-.api-status-loading__dot:nth-child(2) {
+.loading-dots__dot:nth-child(2) {
   animation-delay: 0.15s;
 }
 
-.api-status-loading__dot:nth-child(3) {
+.loading-dots__dot:nth-child(3) {
   animation-delay: 0.3s;
 }
 
-@keyframes api-status-loading-bounce {
+@keyframes loading-dots-bounce {
   0%, 80%, 100% {
     transform: scale(0.6);
     opacity: 0.4;

@@ -330,6 +330,13 @@ async function measureApiLatency({ name, url }) {
   }
 }
 
+// 3 puntos animados en vez de texto tipo "Comprobando…"/"Cargando…" — ver comentario en
+// .loading-dots (css). Compartido entre el panel de Estado de las APIs y la vista previa de
+// cada tarjeta de favorito, para no duplicar el markup en los dos sitios.
+function loadingDotsHtml(label) {
+  return `<span class="loading-dots" role="status" aria-label="${label}"><span class="loading-dots__dot"></span><span class="loading-dots__dot"></span><span class="loading-dots__dot"></span></span>`;
+}
+
 function renderApiStatusRow(name, valueText, valueClass) {
   const li = document.createElement('li');
   li.className = 'api-status-row';
@@ -341,9 +348,7 @@ function renderApiStatusRow(name, valueText, valueClass) {
   const valueEl = document.createElement('span');
   valueEl.className = `api-status-row__value ${valueClass}`;
   if (valueClass === 'api-status-row__value--pending') {
-    // 3 puntos animados en vez de texto — ver comentario en .api-status-loading (css).
-    valueEl.innerHTML =
-      '<span class="api-status-loading" role="status" aria-label="Comprobando"><span class="api-status-loading__dot"></span><span class="api-status-loading__dot"></span><span class="api-status-loading__dot"></span></span>';
+    valueEl.innerHTML = loadingDotsHtml('Comprobando');
   } else {
     valueEl.textContent = valueText;
   }
@@ -748,7 +753,7 @@ function renderFavoriteCard(fav, index, total) {
 
   const preview = document.createElement('div');
   preview.className = 'favorite-card__preview favorite-card__preview--empty';
-  preview.textContent = 'Cargando…';
+  preview.innerHTML = loadingDotsHtml('Cargando');
   loadFavoriteCardPreview(fav.stopId, network, preview);
 
   card.append(header, meta, preview);
