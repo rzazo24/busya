@@ -61,6 +61,9 @@ const favoritesOverlay = document.getElementById('favorites-overlay');
 const favoritesPanel = favoritesOverlay.querySelector('.favorites-modal');
 const favoritesManageListEl = document.getElementById('favorites-manage-list');
 const favoritesEmptyEl = document.getElementById('favorites-empty');
+const favoritesExportBtn = document.getElementById('favorites-export');
+const favoritesImportBtn = document.getElementById('favorites-import');
+const favoritesImportInput = document.getElementById('favorites-import-input');
 const apiStatusOpenBtn = document.getElementById('api-status-open');
 const apiStatusCloseBtn = document.getElementById('api-status-close');
 const apiStatusOverlay = document.getElementById('api-status-overlay');
@@ -709,6 +712,103 @@ function renderFavoritesManageList() {
     favoritesManageListEl.appendChild(renderFavoriteCard(fav, index, favorites.length));
   });
 }
+
+// Exportar/importar favoritos (paradas + líneas) como un único archivo JSON: única forma de
+// llevárselos a otro navegador/dispositivo, dado que se guardan solo en localStorage (ver
+// panel de ayuda) y la app no tiene cuentas ni servidor propio para sincronizarlos.
+function flashButtonText(btn, text, ms = 1800) {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = text;
+  setTimeout(() => {
+    btn.textContent = original;
+    btn.disabled = false;
+  }, ms);
+}
+
+favoritesExportBtn.addEventListener('click', () => {
+  const data = {
+    app: 'busya',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    favorites: getFavorites(),
+    favoriteLines: getFavoriteLines(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `busya-favoritos-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+favoritesImportBtn.addEventListener('click', () => favoritesImportInput.click());
+
+// Fusiona en vez de reemplazar: importar no debe poder borrar favoritos que ya había, solo
+// añadir los que falten. Un favorito ya existente (mismo stopId+network o línea+network) se
+// deja tal cual, no se sobrescribe su nombre ni su orden.
+function mergeFavoritesInto(existing, incoming) {
+  let added = 0;
+  for (const fav of incoming) {
+    if (!fav || typeof fav.stopId !== 'string') continue;
+    const network = fav.network === 'crtm' ? 'crtm' : 'emt';
+    if (existing.some((f) => f.stopId === fav.stopId && favoriteNetwork(f) === network)) continue;
+    existing.push({ stopId: fav.stopId, network, name: typeof fav.name === 'string' ? fav.name : null });
+    added++;
+  }
+  return added;
+}
+
+function mergeFavoriteLinesInto(existing, incoming) {
+  let added = 0;
+  for (const fav of incoming) {
+    if (!fav || (typeof fav.line !== 'string' && typeof fav.line !== 'number')) continue;
+    const network = fav.network === 'crtm' ? 'crtm' : 'emt';
+    const key = String(fav.line);
+    if (existing.some((f) => f.line === key && f.network === network)) continue;
+    existing.push({ line: key, network });
+    added++;
+  }
+  return added;
+}
+
+favoritesImportInput.addEventListener('change', async () => {
+  const file = favoritesImportInput.files?.[0];
+  // Se limpia ya mismo, no al final: si no, seleccionar el mismo archivo dos seguidas (p.ej.
+  // tras corregirlo) no dispararía un segundo "change".
+  favoritesImportInput.value = '';
+  if (!file) return;
+
+  try {
+    const data = JSON.parse(await file.text());
+    const incomingFavorites = Array.isArray(data.favorites) ? data.favorites : [];
+    const incomingLines = Array.isArray(data.favoriteLines) ? data.favoriteLines : [];
+    if (incomingFavorites.length === 0 && incomingLines.length === 0) {
+      throw new Error('vacío');
+    }
+
+    const favorites = getFavorites();
+    const addedFavorites = mergeFavoritesInto(favorites, incomingFavorites);
+    saveFavorites(favorites);
+
+    const favoriteLines = getFavoriteLines();
+    const addedLines = mergeFavoriteLinesInto(favoriteLines, incomingLines);
+    saveFavoriteLines(favoriteLines);
+
+    renderFavoritesManageList();
+    updateFavoriteBtn();
+    // Si hay una parada abierta ahora mismo, sus badges de línea reflejan al instante una
+    // línea recién importada como favorita, sin esperar al próximo refresco de 30s.
+    if (!resultsEl.hidden) renderArrivalsList(lastArrivals, currentNetwork);
+
+    flashButtonText(favoritesImportBtn, `✓ ${addedFavorites + addedLines} añadidos`);
+  } catch {
+    flashButtonText(favoritesImportBtn, 'Archivo no válido');
+  }
+});
 
 function renderFavoriteCard(fav, index, total) {
   const network = favoriteNetwork(fav);

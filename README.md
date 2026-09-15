@@ -96,6 +96,12 @@ paso: se resaltan con un anillo dorado y suben al principio de la lista de esa p
 mucho las 3 próximas llegadas de cada línea, para no tapar el próximo bus real de otra línea
 con una llegada lejana de la favorita).
 
+Los botones "Exportar"/"Importar" del panel de favoritos guardan paradas y líneas favoritas
+en un único archivo JSON, la única forma de llevárselas a otro navegador o dispositivo dado
+que no hay cuentas ni servidor propio. Importar fusiona en vez de reemplazar: un favorito que
+ya existiera (mismo `stopId`+red, o misma línea+red) se deja tal cual, solo se añaden los que
+falten — así que reimportar el mismo archivo o uno de otro dispositivo nunca borra nada.
+
 ## PWA
 
 Instalable desde el navegador ("Añadir a pantalla de inicio" / el aviso de instalación de

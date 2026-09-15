@@ -569,6 +569,26 @@ main {
   padding-right: 4px;
 }
 
+/* Exportar/importar favoritos como JSON: fuera de la lista con scroll, siempre visible al
+   pie del panel — mismo hueco que .api-status-recheck ocupa en su propio panel. */
+.favorites-io {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.favorites-io__btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  background: none;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+}
+
 /* .favorite-card reutiliza .panel (fondo, borde, radio, sombra) — cada favorito es su
    propia tarjeta apilada, no una fila dentro de un único panel grande. Padding vertical
    más ajustado que el de .panel (16px) para que la tarjeta no quede tan alta. */
@@ -1064,6 +1084,11 @@ main {
     color: var(--text);
   }
 
+  .favorites-io__btn:hover {
+    border-color: var(--text-dim);
+    color: var(--text);
+  }
+
   .nearby-stop:hover {
     background: rgba(255, 255, 255, 0.03);
   }
@@ -1114,6 +1139,11 @@ main {
 }
 
 .api-status-recheck:active {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.favorites-io__btn:active {
   border-color: var(--text-dim);
   color: var(--text);
 }

@@ -105,7 +105,7 @@
         (marcada con "~"). A partir de 45 min de espera, en las dos redes se muestra la hora
         de paso (HH:MM) en vez de una cuenta atrás larga.</p>
         <h3>Favoritos</h3>
-        <p>Pulsa el corazón ♡ junto a una parada para guardarla. Desde el ♥ de la cabecera accedes a todos tus favoritos en tarjetas propias, donde puedes renombrarlos y reordenarlos, y cada una muestra ya sus 2 próximos tiempos sin tener que entrar. También puedes tocar el número de una línea en la lista de tiempos para marcarla como favorita: se resalta en dorado ★ y sube al principio de la lista en esa parada. <strong>Los favoritos se guardan solo en este navegador</strong> — no se sincronizan entre dispositivos ni sobreviven a borrar los datos del sitio.</p>
+        <p>Pulsa el corazón ♡ junto a una parada para guardarla. Desde el ♥ de la cabecera accedes a todos tus favoritos en tarjetas propias, donde puedes renombrarlos y reordenarlos, y cada una muestra ya sus 2 próximos tiempos sin tener que entrar. También puedes tocar el número de una línea en la lista de tiempos para marcarla como favorita: se resalta en dorado ★ y sube al principio de la lista en esa parada. <strong>Los favoritos se guardan solo en este navegador</strong> — no se sincronizan entre dispositivos ni sobreviven a borrar los datos del sitio. Con "Exportar"/"Importar" (al final del panel de favoritos) puedes guardarlos en un archivo y llevártelos a otro navegador o dispositivo a mano.</p>
         <h3>Estado de las APIs</h3>
         <p>El botón ⓘ de la cabecera abre un panel con cuánto tarda en responder ahora mismo
         cada API (EMT, CRTM y paradas cercanas) — útil para saber si un tiempo raro es cosa
@@ -133,6 +133,11 @@
       </div>
       <p id="favorites-empty" class="favorites-empty" hidden>Aún no tienes paradas favoritas. Pulsa ♡ junto a una parada para guardarla.</p>
       <div id="favorites-manage-list" class="favorites-manage-list"></div>
+      <div class="favorites-io">
+        <button id="favorites-export" type="button" class="favorites-io__btn">Exportar</button>
+        <button id="favorites-import" type="button" class="favorites-io__btn">Importar</button>
+        <input id="favorites-import-input" type="file" accept="application/json" hidden />
+      </div>
     </div>
   </div>
 
@@ -147,7 +152,7 @@
   </div>
 
   <footer class="app-footer">
-    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.4.0</p>
+    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.4.1</p>
   </footer>
 
   <div id="update-banner" class="update-banner" hidden role="status" aria-live="polite">
