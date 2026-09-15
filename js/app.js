@@ -16,10 +16,14 @@ const FAVORITE_NETWORK_LABELS = { emt: 'EMT', crtm: 'CRTM' };
 // desde JS) para que no haya dos copias del mismo icono que puedan desincronizarse.
 const ICON_HEART =
   '<svg viewBox="0 0 24 24" fill="none" class="icon-heart" aria-hidden="true"><path d="M12 20.2s-7.5-4.5-9.8-9.1C.6 7.9 2 4.3 5.4 3.4c2.1-.6 4.3.3 5.6 2.1a1 1 0 0 0 1.6 0c1.3-1.8 3.5-2.7 5.6-2.1 3.4.9 4.8 4.5 3.2 7.7-2.3 4.6-9.8 9.1-9.8 9.1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+// El círculo grande de estos dos (help/info) se quitó a propósito: el propio .help-btn ya
+// dibuja su círculo (border-radius:50% + border), así que el SVG lo duplicaba justo por
+// dentro del borde del botón, dando un efecto de "círculo dentro de otro círculo" — se deja
+// solo el glifo (? / i), que ya queda centrado y enmarcado por el círculo del botón.
 const ICON_HELP =
-  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.6"/><path d="M9.4 9.6c0-1.9 1.6-3.3 2.7-3.3 2 0 3.4 1.4 3.4 3.1 0 1.3-.7 2.1-1.8 2.8-.9.6-1.3 1-1.3 2v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.1" cy="16.9" r="1.05" fill="currentColor"/></svg>';
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.4 9.6c0-1.9 1.6-3.3 2.7-3.3 2 0 3.4 1.4 3.4 3.1 0 1.3-.7 2.1-1.8 2.8-.9.6-1.3 1-1.3 2v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.1" cy="16.9" r="1.05" fill="currentColor"/></svg>';
 const ICON_INFO =
-  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7.8" r="1.05" fill="currentColor"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="7.8" r="1.05" fill="currentColor"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const ICON_CLOSE =
   '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const ICON_REFRESH =
