@@ -21,6 +21,12 @@
 
 * {
   box-sizing: border-box;
+  /* El resaltado táctil por defecto de WebKit/Android a veces se queda "pegado" iluminando
+     un botón (visto en los ✕ de cerrar: el panel se oculta justo al soltar el toque, antes
+     de que el navegador termine de apagar su propio resaltado). Se desactiva aquí y se
+     sustituye por el :active de abajo, que sí se comporta bien en táctil — se quita al
+     soltar, sin depender de que "el ratón se vaya" como pasaría con :hover. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -1023,6 +1029,59 @@ main {
   .nearby-stop:hover {
     background: rgba(255, 255, 255, 0.03);
   }
+}
+
+/* Mismos efectos que el bloque :hover de arriba, pero como :active y sin la guarda
+   (hover: hover) — es lo que da feedback real al tocar en móvil (se aplica solo mientras se
+   mantiene pulsado y se quita solo al soltar, a diferencia del resaltado nativo desactivado
+   arriba). En desktop también se ve un instante al hacer click, sin conflicto con :hover. */
+.stop-form__row button:active {
+  opacity: 0.85;
+}
+
+.network-toggle__btn:not(.active):active {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.favorites-open-btn:active {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.help-btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.favorite-card__view:active {
+  text-decoration: underline;
+}
+
+.panel-close:active {
+  color: var(--text);
+}
+
+.arrival-item__line:not(.arrival-item__line--favorite):active {
+  box-shadow: 0 0 0 2px var(--text-dim);
+}
+
+.update-banner button:active {
+  opacity: 0.85;
+}
+
+.nearby-btn:active {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.api-status-recheck:active {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.nearby-stop:active {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 @media (max-width: 480px) {
