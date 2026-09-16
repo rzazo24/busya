@@ -1059,6 +1059,24 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
         renderArrivals({ stopName: null, arrivals: [] }, network);
         return;
       }
+
+      // Confirmado en producción con la parada 51159 (Abtao-Av.del Mediterráneo, línea 145):
+      // EMT usa el mismo code ("80", "Parada no disponible actualmente o inexistente") tanto
+      // para una parada que de verdad no existe como para una real que solo está desactivada
+      // para tiempo real ahora mismo — /detail/ sí la conoce (nombre, líneas, horario) aunque
+      // /arrives/ no. Antes de darlo por error duro, se comprueba eso: si /detail/ tiene datos
+      // de esta parada, se muestra el horario/frecuencia de cada línea (mismo mecanismo que ya
+      // usa formatScheduleFallback para líneas nocturnas sin GPS) en vez de un error; si /detail/
+      // tampoco tiene nada, es que la parada de verdad no existe y sí toca el error de abajo.
+      if (network === 'emt') {
+        await ensureStopSchedule(stopId);
+        if (!isCurrentRequest(stopId, network)) return;
+        if (stopScheduleStopId === stopId && stopSchedule?.size > 0) {
+          renderArrivals({ stopName: null, arrivals: scheduleOnlyArrivals() }, network);
+          return;
+        }
+      }
+
       throw new Error(description || `La API de ${NETWORK_LABELS[network]} devolvió un error`);
     }
 
@@ -1268,6 +1286,19 @@ function renderArrivalItem(arrival, network) {
 
   li.append(line, destination, eta, distance);
   return li;
+}
+
+// Fila por línea a partir solo del horario de ensureStopSchedule, sin ningún dato de tiempo
+// real (ver el caso "parada 80" de fetchArrivals) — sin estimateArrive/DistanceBus, así que
+// hasReliableEta() ya los trata como "sin estimación" y renderArrivalItem cae solo en
+// formatScheduleFallback para la distancia, el mismo mecanismo que ya usan las líneas
+// nocturnas sin GPS, sin necesitar un camino de pintado aparte.
+function scheduleOnlyArrivals() {
+  if (!stopSchedule) return [];
+  return [...stopSchedule.values()].map((info) => ({
+    line: info.label ?? info.line,
+    destination: info.direction === 'A' ? info.headerA : info.headerB,
+  }));
 }
 
 // Cuando no hay tiempo real fiable, cae al horario/frecuencia de la línea (si ya se cargó
