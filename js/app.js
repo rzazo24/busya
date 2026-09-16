@@ -1371,7 +1371,10 @@ const CLOCK_TIME_THRESHOLD_SECONDS = 45 * 60;
 function formatEta(seconds, network) {
   if (!hasReliableEta(seconds, network)) return 'Sin estimación';
   if (seconds < 60) return 'Llegando';
-  if (seconds < CLOCK_TIME_THRESHOLD_SECONDS) return `${Math.round(seconds / 60)} min`;
+  // Se trunca hacia abajo, no se redondea: como una cuenta atrás real, solo baja de "2 min" a
+  // "1 min" cuando ya ha pasado el minuto completo — redondear hacía que BusYa mostrara un
+  // minuto más que otras apps (EMT oficial, Google Maps) en la mitad de cada minuto.
+  if (seconds < CLOCK_TIME_THRESHOLD_SECONDS) return `${Math.floor(seconds / 60)} min`;
   const arrivalTime = new Date(Date.now() + seconds * 1000);
   return arrivalTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
