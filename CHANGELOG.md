@@ -6,6 +6,20 @@ Añadido/Corregido. A partir de la v1.0.0 cada versión corresponde a un commit 
 `package.json` (enlazado por su hash); antes de eso el proyecto no llevaba un número de
 versión con significado, así que la v0.1.0 agrupa por tema todo el desarrollo inicial.
 
+## Sin versionar (solo backend)
+
+Cambios en las funciones serverless (`api/*.js`) que no suben el número de versión ni el
+`CACHE_NAME` del service worker — no tocan el shell estático que este cachea (html/css/js),
+así que no hay nada que anuncie una "versión nueva"; el fix ya está en producción para todo el
+mundo desde el momento del despliegue en Vercel, igual que cualquier otro cambio de backend.
+
+### Corregido
+
+- CRTM: la distancia del bus se repetía igual en todas las llegadas de una misma línea+
+  sentido aunque fueran horas después (la posición en vivo de `GetLineLocation.php` es del
+  vehículo en servicio ahora, no una por cada hora programada); ahora solo se calcula para la
+  llegada más próxima de cada línea+sentido, el resto se queda sin distancia. ([24483a7])
+
 ## [1.5.4] - 2026-09-16
 
 ### Corregido
@@ -253,6 +267,7 @@ resumido aquí por tema en vez de commit por commit.
 [2a80143]: https://github.com/rzazo24/busya/commit/2a80143c874d53b3d58f8609b5add85a57649e17
 [22ba618]: https://github.com/rzazo24/busya/commit/22ba618d56b0309c44a49434b20bac85f4c6186d
 [3966a7d]: https://github.com/rzazo24/busya/commit/3966a7d2d8a67b62b6e27e0c16a251d44a924ad9
+[24483a7]: https://github.com/rzazo24/busya/commit/24483a72023a4a1421cf7af423576e887fe82ab0
 [7c67bba]: https://github.com/rzazo24/busya/commit/7c67bba2116bbfd8ba60187734a3998a032a1fa6
 [d5b7250]: https://github.com/rzazo24/busya/commit/d5b7250829131d29023e4ff6dd3efd33e50edd71
 [12caf0a]: https://github.com/rzazo24/busya/commit/12caf0ac7e122564490a2d3edc3ec4688af040b2

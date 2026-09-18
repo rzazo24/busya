@@ -176,6 +176,7 @@ busya/
 ├── .env.example
 ├── vercel.json
 ├── LICENSE
+├── CHANGELOG.md
 ├── package.json
 └── package-lock.json
 ```
@@ -225,6 +226,10 @@ contra la API real (pública, sin credenciales); sin `EMT_CLIENT_ID`/`EMT_PASSKE
 
 No hace falta ningún paso de build: Vercel sirve `index.html`/`css`/`js` como estático y
 despliega cada archivo de `api/` como Function automáticamente.
+
+## Changelog
+
+Historial de versiones en [CHANGELOG.md](CHANGELOG.md), con enlace al commit real de cada una.
 
 ## Licencia
 
