@@ -170,11 +170,30 @@ export default async function handler(req, res) {
 
     const distanceByLine = await fetchDistancesByLine(timesList, codStop, stopCoords);
 
-    const arrivals = timesList.map((t) => ({
+    const arrivalsRaw = timesList.map((t) => ({
       line: t.line?.shortDescription ?? '',
       destination: t.destination ?? '',
+      key: `${t.line?.codLine}|${t.direction}`,
       estimateArrive: Math.max(0, Math.round((new Date(t.time).getTime() - now) / 1000)),
-      distanceMeters: distanceByLine.get(`${t.line?.codLine}|${t.direction}`) ?? null,
+    }));
+
+    // GetLineLocation.php da la posición del vehículo en servicio AHORA MISMO para una línea+
+    // sentido, no una posición distinta por cada hora programada de esa línea — así que la
+    // distancia calculada solo tiene sentido para la llegada más próxima de cada línea+
+    // sentido. Confirmado en vivo en paradas con mucho tráfico (p.ej. el intercambiador de
+    // Plaza de Castilla) que una misma línea puede tener 2-3 horas programadas en la misma
+    // consulta (una de madrugada, otras horas después): sin este filtro, todas heredaban la
+    // distancia del bus que va a pasar ahora, como si el bus de dentro de varias horas fuera
+    // el mismo que el que se ve acercarse ya.
+    const soonestEtaByKey = new Map();
+    for (const a of arrivalsRaw) {
+      const current = soonestEtaByKey.get(a.key);
+      if (current === undefined || a.estimateArrive < current) soonestEtaByKey.set(a.key, a.estimateArrive);
+    }
+
+    const arrivals = arrivalsRaw.map(({ key, ...a }) => ({
+      ...a,
+      distanceMeters: a.estimateArrive === soonestEtaByKey.get(key) ? (distanceByLine.get(key) ?? null) : null,
     }));
 
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=40');
