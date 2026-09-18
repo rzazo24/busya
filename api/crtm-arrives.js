@@ -94,10 +94,15 @@ async function fetchVehicleDistanceMeters(codLine, direction, codStop, stopCoord
 
     const data = await res.json();
     const located = data.vehiclesLocation?.VehicleLocation;
-    const vehicle = Array.isArray(located) ? located[0] : located;
-    if (!vehicle?.coordinates) return null; // línea sin ningún bus circulando ahora mismo
+    const vehicles = Array.isArray(located) ? located : located ? [located] : [];
+    if (vehicles.length === 0) return null; // línea sin ningún bus circulando ahora mismo
 
-    return haversineMeters(stopCoords, vehicle.coordinates);
+    // Una línea puede tener varios vehículos circulando a la vez en la misma línea+sentido
+    // (confirmado en vivo: 2 buses simultáneos en la 333 dirección 1) y CRTM no da ninguna
+    // forma fiable de saber cuál de ellos corresponde a una hora programada concreta — el más
+    // cercano a la parada es la mejor aproximación disponible, mejor que tomar el primero del
+    // array sin más criterio.
+    return Math.min(...vehicles.map((v) => haversineMeters(stopCoords, v.coordinates)));
   } catch {
     return null;
   }
@@ -191,10 +196,24 @@ export default async function handler(req, res) {
       if (current === undefined || a.estimateArrive < current) soonestEtaByKey.set(a.key, a.estimateArrive);
     }
 
-    const arrivals = arrivalsRaw.map(({ key, ...a }) => ({
-      ...a,
-      distanceMeters: a.estimateArrive === soonestEtaByKey.get(key) ? (distanceByLine.get(key) ?? null) : null,
-    }));
+    // Última red de seguridad: aunque se elija el vehículo más cercano de entre los que
+    // circulan por esa línea+sentido (ver fetchVehicleDistanceMeters), sigue sin haber forma
+    // fiable de saber si es el que realmente va a pasar por ESTA parada en concreto — CRTM no
+    // da ningún identificador que ligue una hora programada a un vehículo (su codIssue no
+    // sigue un formato consistente entre líneas, confirmado en vivo, así que no es fiable
+    // para emparejarlos). Cuando la distancia implica una velocidad media por encima de lo que
+    // un autobús puede alcanzar de verdad, se descarta en vez de mostrarla — confirmado en
+    // vivo en la parada 3353, línea 333: el bus más próximo "llegaba" en 14s pero el vehículo
+    // más cercano de esa línea+sentido seguía a ~3 km (216 m/s, imposible), probablemente
+    // porque el bus real que se acerca no tiene GPS actualizado en este preciso momento y el
+    // que sí se ve es simplemente otro servicio de la misma línea.
+    const MAX_PLAUSIBLE_BUS_SPEED_MPS = 30; // 108 km/h, generoso incluso para autovía
+
+    const arrivals = arrivalsRaw.map(({ key, ...a }) => {
+      const raw = a.estimateArrive === soonestEtaByKey.get(key) ? (distanceByLine.get(key) ?? null) : null;
+      const plausible = raw == null || raw / Math.max(a.estimateArrive, 1) <= MAX_PLAUSIBLE_BUS_SPEED_MPS;
+      return { ...a, distanceMeters: plausible ? raw : null };
+    });
 
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=40');
     return res.status(200).json({
