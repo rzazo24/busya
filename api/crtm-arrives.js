@@ -6,8 +6,14 @@
 // No requiere credenciales — a diferencia de EMT, esta API es pública — pero no manda
 // cabeceras CORS, así que un fetch directo desde el navegador falla; este proxy solo existe
 // para saltar esa restricción, no para esconder ningún secreto.
-
-import { haversineMeters } from '../lib/geo.js';
+//
+// No calcula distancia del bus (a diferencia de EMT, que la da directa en su propia API):
+// se intentó aproximarla en línea recta a partir de la posición en vivo de GetLineLocation.php,
+// pero CRTM no da ninguna forma fiable de saber qué vehículo concreto corresponde a qué hora
+// programada cuando hay varios circulando en la misma línea+sentido — tras varios intentos de
+// arreglarlo (la misma distancia se repetía entre llegadas, o salían valores físicamente
+// imposibles como un bus "llegando" ya a varios km), se quitó por completo: es mejor no
+// mostrar nada que un dato erróneo la mayoría de las veces.
 
 const CRTM_BASE = 'https://www.crtm.es/widgets/api';
 
@@ -15,28 +21,13 @@ const CRTM_BASE = 'https://www.crtm.es/widgets/api';
 // 9=urbanos de otros municipios, 10=Metro Ligero/Tranvía). Verificado contra la API real.
 const INTERURBAN_MODE = '8';
 
-// Probado en vivo: la mayoría de las llamadas a CRTM tardan 300-900ms, pero de vez en cuando
-// una se cuelga varios segundos (una vez, 21s en total para una sola búsqueda). Sin límite,
-// una sola llamada colgada arrastra todo el Promise.all y puede superar los 10s de
-// maxDuration de la función en Vercel, tirando abajo una búsqueda que por lo demás iba bien.
-// Con esto, esa llamada concreta simplemente no da distancia (igual que "sin bus circulando")
-// en vez de romper toda la respuesta.
-const FETCH_TIMEOUT_MS = 2500;
+// Probado en vivo: GetStopsTimes tarda 300-900ms la mayoría de las veces, pero de vez en
+// cuando se cuelga varios segundos (una vez, 21s). 5s deja margen de sobra bajo el
+// maxDuration:10 de vercel.json sin arriesgar timeouts en el caso normal.
+const FETCH_TIMEOUT_MS = 5000;
 
-// GetStopsTimes (los tiempos de paso en sí) es la única llamada sin la que no hay respuesta
-// posible — a diferencia de las de distancia, que ya degradan solas a "sin distancia" si
-// fallan. Recibido en producción "No se pudo obtener información de CRTM" con paradas reales
-// que, probadas a mano justo después, respondían bien en ~1s: la propia GetStopsTimes se
-// cuelga a veces más que las 2.5s de arriba, y con ese límite tan corto para la llamada
-// esencial se tira la búsqueda entera por un hipo que un poco más de margen habría absorbido.
-// 5s en vez de más para no arriesgar el maxDuration:10 de vercel.json — GetStopsTimes corre
-// en paralelo con fetchStopCoordinates (2.5s), y después va la ronda de distancias (hasta
-// ~5s en el peor caso, itinerario + posición encadenados) — 5s + 5s deja algo de margen
-// dentro del límite en vez de agotarlo.
-const PRIMARY_FETCH_TIMEOUT_MS = 5000;
-
-function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
-  return fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+function fetchWithTimeout(url) {
+  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
 }
 
 function buildCodStop(stopId) {
@@ -44,90 +35,6 @@ function buildCodStop(stopId) {
   // (probado en vivo: codStop=8_6002 devuelve error, 8_06002 funciona) — se usa el número
   // tal cual lo escribe el usuario, asumiendo que coincide con lo impreso en el poste.
   return `${INTERURBAN_MODE}_${stopId}`;
-}
-
-// CRTM no da distancia del bus junto a los tiempos de paso (a diferencia de EMT). Sí existe
-// un endpoint de posición en vivo (GetLineLocation.php), pero por línea+sentido, no por
-// parada — probado en vivo: para mostrarla hay que 1) sacar las coordenadas de la parada,
-// 2) por cada combinación única de línea+sentido de los resultados, buscar su itinerario y
-// preguntar la posición del vehículo, todo en paralelo. Es una distancia en línea recta
-// (solo hay coordenadas de bus y de parada, no la ruta real), así que se queda corta en
-// carreteras con curvas — más aproximada que el DistanceBus real de EMT.
-async function fetchStopCoordinates(codStop) {
-  try {
-    const res = await fetchWithTimeout(`${CRTM_BASE}/GetStops.php?codStop=${encodeURIComponent(codStop)}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const stop = data.stops?.Stop;
-    const stopObj = Array.isArray(stop) ? stop[0] : stop;
-    return stopObj?.coordinates ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchItineraryCode(codLine, direction) {
-  const res = await fetchWithTimeout(
-    `${CRTM_BASE}/GetLinesInformation.php?activeItinerary=1&codLine=${encodeURIComponent(codLine)}`
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  const itineraries = data.lines?.LineInformation?.itinerary?.Itinerary;
-  const list = Array.isArray(itineraries) ? itineraries : itineraries ? [itineraries] : [];
-  // Si ningún itinerario declara el mismo sentido que el de la llegada, mejor una posición
-  // aproximada (el primer itinerario que haya) que ninguna.
-  const match = list.find((it) => Number(it.direction) === Number(direction));
-  return match?.codItinerary ?? list[0]?.codItinerary ?? null;
-}
-
-async function fetchVehicleDistanceMeters(codLine, direction, codStop, stopCoords) {
-  if (!stopCoords) return null;
-  try {
-    const codItinerary = await fetchItineraryCode(codLine, direction);
-    if (!codItinerary) return null;
-
-    const url =
-      `${CRTM_BASE}/GetLineLocation.php?mode=${INTERURBAN_MODE}&codItinerary=${encodeURIComponent(codItinerary)}` +
-      `&codLine=${encodeURIComponent(codLine)}&codStop=${encodeURIComponent(codStop)}&direction=${direction}`;
-    const res = await fetchWithTimeout(url);
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const located = data.vehiclesLocation?.VehicleLocation;
-    const vehicles = Array.isArray(located) ? located : located ? [located] : [];
-    if (vehicles.length === 0) return null; // línea sin ningún bus circulando ahora mismo
-
-    // Una línea puede tener varios vehículos circulando a la vez en la misma línea+sentido
-    // (confirmado en vivo: 2 buses simultáneos en la 333 dirección 1) y CRTM no da ninguna
-    // forma fiable de saber cuál de ellos corresponde a una hora programada concreta — el más
-    // cercano a la parada es la mejor aproximación disponible, mejor que tomar el primero del
-    // array sin más criterio.
-    return Math.min(...vehicles.map((v) => haversineMeters(stopCoords, v.coordinates)));
-  } catch {
-    return null;
-  }
-}
-
-// Una entrada por cada combinación única (codLine, direction) que aparezca en los
-// resultados — varias llegadas de la misma línea/sentido comparten la misma búsqueda de
-// posición, no hace falta repetirla.
-async function fetchDistancesByLine(timesList, codStop, stopCoords) {
-  const uniquePairs = [
-    ...new Map(
-      timesList
-        .filter((t) => t.line?.codLine)
-        .map((t) => [`${t.line.codLine}|${t.direction}`, { codLine: t.line.codLine, direction: t.direction }])
-    ).values(),
-  ];
-
-  const entries = await Promise.all(
-    uniquePairs.map(async ({ codLine, direction }) => [
-      `${codLine}|${direction}`,
-      await fetchVehicleDistanceMeters(codLine, direction, codStop, stopCoords),
-    ])
-  );
-
-  return new Map(entries);
 }
 
 export default async function handler(req, res) {
@@ -140,14 +47,7 @@ export default async function handler(req, res) {
   try {
     const codStop = buildCodStop(stopId);
     const url = `${CRTM_BASE}/GetStopsTimes.php?codStop=${encodeURIComponent(codStop)}&type=0&orderBy=2&stopTimesByIti=`;
-
-    // Las coordenadas de la parada no dependen en nada del resultado de GetStopsTimes (solo
-    // hace falta el codStop, que ya se tiene) — se piden en paralelo en vez de encadenadas,
-    // para no sumar su latencia a la del resto de llamadas (itinerario + posición) de abajo.
-    const [crtmRes, stopCoords] = await Promise.all([
-      fetchWithTimeout(url, PRIMARY_FETCH_TIMEOUT_MS),
-      fetchStopCoordinates(codStop),
-    ]);
+    const crtmRes = await fetchWithTimeout(url);
 
     if (!crtmRes.ok) {
       throw new Error(`CRTM respondió con status ${crtmRes.status}`);
@@ -173,47 +73,11 @@ export default async function handler(req, res) {
     const rawTimes = stopTimes.times?.Time;
     const timesList = Array.isArray(rawTimes) ? rawTimes : rawTimes ? [rawTimes] : [];
 
-    const distanceByLine = await fetchDistancesByLine(timesList, codStop, stopCoords);
-
-    const arrivalsRaw = timesList.map((t) => ({
+    const arrivals = timesList.map((t) => ({
       line: t.line?.shortDescription ?? '',
       destination: t.destination ?? '',
-      key: `${t.line?.codLine}|${t.direction}`,
       estimateArrive: Math.max(0, Math.round((new Date(t.time).getTime() - now) / 1000)),
     }));
-
-    // GetLineLocation.php da la posición del vehículo en servicio AHORA MISMO para una línea+
-    // sentido, no una posición distinta por cada hora programada de esa línea — así que la
-    // distancia calculada solo tiene sentido para la llegada más próxima de cada línea+
-    // sentido. Confirmado en vivo en paradas con mucho tráfico (p.ej. el intercambiador de
-    // Plaza de Castilla) que una misma línea puede tener 2-3 horas programadas en la misma
-    // consulta (una de madrugada, otras horas después): sin este filtro, todas heredaban la
-    // distancia del bus que va a pasar ahora, como si el bus de dentro de varias horas fuera
-    // el mismo que el que se ve acercarse ya.
-    const soonestEtaByKey = new Map();
-    for (const a of arrivalsRaw) {
-      const current = soonestEtaByKey.get(a.key);
-      if (current === undefined || a.estimateArrive < current) soonestEtaByKey.set(a.key, a.estimateArrive);
-    }
-
-    // Última red de seguridad: aunque se elija el vehículo más cercano de entre los que
-    // circulan por esa línea+sentido (ver fetchVehicleDistanceMeters), sigue sin haber forma
-    // fiable de saber si es el que realmente va a pasar por ESTA parada en concreto — CRTM no
-    // da ningún identificador que ligue una hora programada a un vehículo (su codIssue no
-    // sigue un formato consistente entre líneas, confirmado en vivo, así que no es fiable
-    // para emparejarlos). Cuando la distancia implica una velocidad media por encima de lo que
-    // un autobús puede alcanzar de verdad, se descarta en vez de mostrarla — confirmado en
-    // vivo en la parada 3353, línea 333: el bus más próximo "llegaba" en 14s pero el vehículo
-    // más cercano de esa línea+sentido seguía a ~3 km (216 m/s, imposible), probablemente
-    // porque el bus real que se acerca no tiene GPS actualizado en este preciso momento y el
-    // que sí se ve es simplemente otro servicio de la misma línea.
-    const MAX_PLAUSIBLE_BUS_SPEED_MPS = 30; // 108 km/h, generoso incluso para autovía
-
-    const arrivals = arrivalsRaw.map(({ key, ...a }) => {
-      const raw = a.estimateArrive === soonestEtaByKey.get(key) ? (distanceByLine.get(key) ?? null) : null;
-      const plausible = raw == null || raw / Math.max(a.estimateArrive, 1) <= MAX_PLAUSIBLE_BUS_SPEED_MPS;
-      return { ...a, distanceMeters: plausible ? raw : null };
-    });
 
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=40');
     return res.status(200).json({

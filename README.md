@@ -56,10 +56,11 @@ un error. En las dos redes, a partir de 45 min de espera el tiempo se muestra co
 paso (HH:MM) en vez de una cuenta atrás larga.
 
 Las líneas de EMT se muestran en azul y las de Interurbano en verde — el mismo color que
-llevan esos autobuses en la calle. La distancia del bus en Interurbano es aproximada (línea
-recta entre dos coordenadas GPS, no la ruta real): se calcula con una llamada adicional a
-`GetLineLocation.php` por cada línea+sentido que aparece en los resultados, y se marca con
-"~" en la interfaz para dejar claro que no es exacta como el `DistanceBus` real de EMT.
+llevan esos autobuses en la calle. Interurbano no muestra distancia del bus (a diferencia de
+EMT, que la da directa en su propia API como `DistanceBus`): se intentó aproximarla en línea
+recta a partir de la posición en vivo de `GetLineLocation.php`, pero CRTM no da ninguna forma
+fiable de saber qué vehículo concreto corresponde a qué hora programada cuando hay varios
+circulando en la misma línea+sentido, así que salía mal la mayoría de las veces y se quitó.
 
 ## Paradas cercanas
 
@@ -156,11 +157,11 @@ busya/
 ├── api/
 │   ├── emt-arrives.js       # GET /api/emt-arrives?stopId= — tiempos de paso EMT en tiempo real
 │   ├── emt-stop-detail.js   # GET /api/emt-stop-detail?stopId= — horario/frecuencia por línea (EMT)
-│   ├── crtm-arrives.js      # GET /api/crtm-arrives?stopId= — tiempos de paso + distancia interurbanos (CRTM)
+│   ├── crtm-arrives.js      # GET /api/crtm-arrives?stopId= — tiempos de paso interurbanos (CRTM)
 │   └── nearby-stops.js      # GET /api/nearby-stops?lat=&lon= — paradas EMT+CRTM cercanas a una coordenada
 ├── lib/
 │   ├── emt-client.js        # Login + caché de accessToken, compartido por las dos funciones de EMT
-│   └── geo.js                # Distancia entre coordenadas GPS, compartida por crtm-arrives.js y nearby-stops.js
+│   └── geo.js                # Distancia entre coordenadas GPS, usada por nearby-stops.js
 ├── css/
 │   └── style.css
 ├── js/

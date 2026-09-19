@@ -1270,18 +1270,18 @@ function renderArrivalItem(arrival, network) {
 
   const distance = document.createElement('span');
   distance.className = 'arrival-item__distance';
-  if (network === 'crtm') {
-    // Aproximada (línea recta entre las coordenadas del bus y de la parada, calculada en
-    // el proxy) — CRTM no da la distancia real sobre la ruta como sí hace EMT. El "~" dejar
-    // claro que no es exacta. Vacía cuando no hay ningún vehículo circulando ya en esa
-    // línea/sentido.
-    const formatted = formatDistance(arrival.distanceMeters);
-    distance.textContent = formatted ? `~${formatted}` : '';
-  } else if (hasReliableEta(arrival.estimateArrive, network)) {
-    // Sin ETA fiable no hay posición real del bus; DistanceBus no es un dato útil en ese caso.
-    distance.textContent = formatDistance(arrival.DistanceBus);
-  } else {
-    distance.textContent = formatScheduleFallback(arrival.line);
+  // CRTM no muestra distancia: solo se podía aproximar en línea recta a partir de la posición
+  // en vivo de "algún" vehículo de esa línea+sentido, sin forma fiable de saber si era el que
+  // realmente iba a pasar por esta parada — tras varios intentos de arreglarlo (repetía la
+  // misma distancia entre llegadas, o mostraba valores físicamente imposibles), es un dato que
+  // sale mal la mayoría de las veces y es mejor no mostrar nada que mostrar algo erróneo.
+  if (network === 'emt') {
+    if (hasReliableEta(arrival.estimateArrive, network)) {
+      // Sin ETA fiable no hay posición real del bus; DistanceBus no es un dato útil en ese caso.
+      distance.textContent = formatDistance(arrival.DistanceBus);
+    } else {
+      distance.textContent = formatScheduleFallback(arrival.line);
+    }
   }
 
   li.append(line, destination, eta, distance);
