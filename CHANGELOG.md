@@ -6,6 +6,30 @@ Añadido/Corregido. A partir de la v1.0.0 cada versión corresponde a un commit 
 `package.json` (enlazado por su hash); antes de eso el proyecto no llevaba un número de
 versión con significado, así que la v0.1.0 agrupa por tema todo el desarrollo inicial.
 
+## [1.5.6] - 2026-09-19
+
+### Corregido
+
+Seis bugs de una revisión de código externa (handoff auditado con evidencia antes de aplicar
+nada — ver `.claude/review-handoff.md`, local, no versionado):
+
+- El selector de red (EMT/Interurbano) desincronizaba lo que se veía en pantalla de lo que la
+  app "creía" que estaba viendo al cambiarlo con una parada ya buscada — el ♡, el refresco
+  automático y la URL compartida podían quedar apuntando a una parada de la red equivocada
+  (EMT y CRTM no comparten numeración). Ahora se limpian resultados/URL/favorito al cambiar de
+  red a mano.
+- Una búsqueda de paradas cercanas que resolvía tarde podía reabrir su panel encima de una
+  parada ya buscada mientras tanto.
+- CRTM: una hora de referencia (`actualDate`) ausente o inválida dejaba silenciosamente todas
+  las llegadas de una parada sin estimación, dentro de una respuesta 200 normal.
+- Mensajes de error crípticos ("Unexpected token '<'...") cuando una llamada a EMT se colgaba
+  el tiempo suficiente para chocar con el límite de la plataforma.
+- Login de EMT: dos peticiones concurrentes con el token caducado hacían cada una su propio
+  login en vez de compartirlo; y un valor no numérico en la duración del token podía forzar un
+  login nuevo en cada petición sin avisar.
+
+([630f4d6])
+
 ## Sin versionar (solo backend)
 
 Cambios en las funciones serverless (`api/*.js`) que no suben el número de versión ni el
@@ -298,3 +322,4 @@ resumido aquí por tema en vez de commit por commit.
 [497e41d]: https://github.com/rzazo24/busya/commit/497e41db4afa4c02bd780ebb747c5c80d9dae3e4
 [1a4a4c1]: https://github.com/rzazo24/busya/commit/1a4a4c1d31b115ace9a386bdc9a3c2d540831f98
 [ffdca08]: https://github.com/rzazo24/busya/commit/ffdca08478828f437903e94b78d090c8576093b0
+[630f4d6]: https://github.com/rzazo24/busya/commit/630f4d6744d6004b9766a4071850c790d4e0937b
