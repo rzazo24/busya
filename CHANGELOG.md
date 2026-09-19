@@ -25,6 +25,17 @@ mundo desde el momento del despliegue en Vercel, igual que cualquier otro cambio
   los que haya, y aun así se descarta la distancia si implica una velocidad media imposible
   para un autobús. ([5d9c4d7])
 
+## [1.5.5] - 2026-09-19
+
+### Quitado
+
+- Distancia del bus en Interurbano (CRTM). Tras tres intentos de arreglarla en la misma sesión
+  (distancia repetida entre llegadas, vehículo arbitrario elegido entre varios, valores
+  físicamente imposibles — ver la sección "Sin versionar" de arriba), quedó claro que es una
+  limitación real de los datos de CRTM y no algo arreglable en el proxy: se quita en vez de
+  seguir parcheando. EMT no se toca, su `DistanceBus` viene directo de su propia API y nunca
+  ha dado problemas. ([ced5bf3])
+
 ## [1.5.4] - 2026-09-16
 
 ### Corregido
@@ -274,6 +285,7 @@ resumido aquí por tema en vez de commit por commit.
 [3966a7d]: https://github.com/rzazo24/busya/commit/3966a7d2d8a67b62b6e27e0c16a251d44a924ad9
 [24483a7]: https://github.com/rzazo24/busya/commit/24483a72023a4a1421cf7af423576e887fe82ab0
 [5d9c4d7]: https://github.com/rzazo24/busya/commit/5d9c4d7e6e5d99ee90cf47f03879d04131d941e6
+[ced5bf3]: https://github.com/rzazo24/busya/commit/ced5bf3f04bad11bbce731e9c112868177b31ac7
 [7c67bba]: https://github.com/rzazo24/busya/commit/7c67bba2116bbfd8ba60187734a3998a032a1fa6
 [d5b7250]: https://github.com/rzazo24/busya/commit/d5b7250829131d29023e4ff6dd3efd33e50edd71
 [12caf0a]: https://github.com/rzazo24/busya/commit/12caf0ac7e122564490a2d3edc3ec4688af040b2
