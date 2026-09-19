@@ -65,19 +65,30 @@ export default async function handler(req, res) {
 
     // CRTM da una hora absoluta de paso, no segundos restantes como EMT — se calcula aquí,
     // contra la propia hora del servidor de CRTM (actualDate) y no la del usuario, para no
-    // depender de que el reloj del navegador esté bien puesto.
-    const now = new Date(stopTimes.actualDate).getTime();
+    // depender de que el reloj del navegador esté bien puesto. Si actualDate faltara o no
+    // fuera parseable, Date.parse daría NaN y TODAS las llegadas saldrían sin estimación de
+    // golpe (ver más abajo) — se usa el reloj del propio servidor como respaldo en ese caso.
+    const parsedNow = Date.parse(stopTimes.actualDate);
+    const now = Number.isFinite(parsedNow) ? parsedNow : Date.now();
 
     // Igual que en las respuestas de EMT/CRTM ya vistas: con un solo resultado, el campo
     // llega como objeto suelto en vez de array de un elemento — hay que contemplar ambos casos.
     const rawTimes = stopTimes.times?.Time;
     const timesList = Array.isArray(rawTimes) ? rawTimes : rawTimes ? [rawTimes] : [];
 
-    const arrivals = timesList.map((t) => ({
-      line: t.line?.shortDescription ?? '',
-      destination: t.destination ?? '',
-      estimateArrive: Math.max(0, Math.round((new Date(t.time).getTime() - now) / 1000)),
-    }));
+    const arrivals = timesList.map((t) => {
+      const parsedTime = Date.parse(t.time);
+      // Si el "time" de esta llegada en concreto no fuera parseable, se deja sin estimación
+      // (null, igual que hasReliableEta ya trata cualquier valor no numérico) en vez de
+      // quitar la línea entera de la lista — sigue siendo información real de que esa línea
+      // pasa por esta parada, aunque no se sepa cuándo.
+      const estimateArrive = Number.isFinite(parsedTime) ? Math.max(0, Math.round((parsedTime - now) / 1000)) : null;
+      return {
+        line: t.line?.shortDescription ?? '',
+        destination: t.destination ?? '',
+        estimateArrive,
+      };
+    });
 
     res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate=40');
     return res.status(200).json({

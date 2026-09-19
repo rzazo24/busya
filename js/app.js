@@ -185,7 +185,9 @@ let renderedNetwork = null;
 let lastSuccessAt = null;
 
 networkToggleBtns.forEach((btn) => {
-  btn.addEventListener('click', () => setNetwork(btn.dataset.network));
+  // resetResults: solo al pulsar el selector a mano, nunca en las llamadas internas a
+  // setNetwork (arranque, searchStop) — ver la propia función.
+  btn.addEventListener('click', () => setNetwork(btn.dataset.network, { resetResults: true }));
 });
 
 form.addEventListener('submit', (event) => {
@@ -463,7 +465,16 @@ async function checkApiStatus() {
   }
 }
 
-function setNetwork(network) {
+// resetResults solo se usa desde el listener del toggle (abajo): al cambiar de red con una
+// parada ya buscada, no hay forma de saber si el número tecleado tiene sentido también en la
+// red nueva (EMT y CRTM no comparten numeración, ver CLAUDE.md), así que se limpia el panel y
+// la URL en vez de arrastrar los resultados de la red anterior con el estado ya apuntando a
+// la nueva. IMPORTANTE: no cortar aquí con un `return` si `network === currentNetwork` — esta
+// función también se llama en el arranque con la red ya inicializada por defecto (ver más
+// abajo), y #search-btn no trae su clase de color en el HTML estático: un `return` temprano
+// dejaría el botón "Buscar" en verde en vez de azul en la primera carga con EMT.
+function setNetwork(network, { resetResults = false } = {}) {
+  const changed = network !== currentNetwork;
   currentNetwork = network;
   networkToggleBtns.forEach((btn) => {
     const active = btn.dataset.network === network;
@@ -472,10 +483,32 @@ function setNetwork(network) {
   });
   stopInput.placeholder = network === 'crtm' ? 'Ej. 06002' : 'Ej. 72';
   searchBtn.classList.toggle('network-emt', network === 'emt');
+
+  if (changed && resetResults) {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = null;
+    currentStopId = null;
+    currentStopName = null;
+    renderedStopId = null;
+    renderedNetwork = null;
+    lastArrivals = [];
+    resultsEl.hidden = true;
+    nearbyResultsEl.hidden = true;
+    nearbyRequestId++;
+    hideStatus();
+    updateFavoriteBtn();
+    // Se quita ?stop= de la URL (con replaceState, no pushState, igual que updateUrlForStop)
+    // para no dejar un enlace compartible que diga tener una parada de la red anterior.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('stop');
+    url.searchParams.set('network', network);
+    history.replaceState(null, '', url);
+  }
 }
 
 function searchStop(stopId, network = currentNetwork) {
   nearbyResultsEl.hidden = true;
+  nearbyRequestId++; // invalida cualquier búsqueda de paradas cercanas que siguiera en vuelo
   setNetwork(network);
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
@@ -506,7 +539,10 @@ async function ensureStopSchedule(stopId) {
 
   try {
     const res = await fetch(`/api/emt-stop-detail?stopId=${encodeURIComponent(stopId)}`);
-    const payload = await res.json();
+    // .catch(): si la función serverless se cuelga hasta el límite de Vercel, la plataforma
+    // responde con una página de error en HTML, no JSON — sin esto, res.json() lanzaría un
+    // SyntaxError en vez del "falla en silencio" que ya espera el catch de esta función.
+    const payload = await res.json().catch(() => ({}));
     if (!res.ok || (payload.code && payload.code !== '00')) return;
 
     const stop = payload.data?.[0]?.stops?.[0];
@@ -561,9 +597,20 @@ const GEOLOCATION_ERROR_MESSAGES = {
 };
 
 nearbyBtn.addEventListener('click', searchNearbyStops);
-nearbyCloseBtn.addEventListener('click', () => { nearbyResultsEl.hidden = true; });
+nearbyCloseBtn.addEventListener('click', () => {
+  nearbyResultsEl.hidden = true;
+  nearbyRequestId++; // si aún hay una búsqueda en vuelo, que no reabra el panel al resolver
+});
+
+// Igual que isCurrentRequest para fetchArrivals: getCurrentPosition + /api/nearby-stops
+// puede resolver después de que el usuario ya haya buscado una parada (o cerrado este mismo
+// panel) — sin este token, renderNearbyList reabría el panel de cercanías encima de lo que
+// se estuviera viendo, con hideStatus() de propina pisando el status de la otra búsqueda.
+let nearbyRequestId = 0;
 
 function searchNearbyStops() {
+  const requestId = ++nearbyRequestId;
+
   if (!('geolocation' in navigator)) {
     nearbyResultsEl.hidden = true;
     showStatus('Este navegador no admite geolocalización.', 'error');
@@ -576,18 +623,22 @@ function searchNearbyStops() {
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      if (requestId !== nearbyRequestId) return;
       showStatus('Buscando paradas cercanas…', 'loading');
       try {
         const { latitude, longitude } = position.coords;
         const res = await fetch(`/api/nearby-stops?lat=${latitude}&lon=${longitude}`);
-        const payload = await res.json();
+        const payload = await res.json().catch(() => ({}));
+        if (requestId !== nearbyRequestId) return;
         if (!res.ok) throw new Error(payload.error || `Error ${res.status}`);
         renderNearbyList(payload.stops ?? []);
       } catch (err) {
+        if (requestId !== nearbyRequestId) return;
         showStatus(`No se han podido buscar paradas cercanas: ${err.message}`, 'error');
       }
     },
     (err) => {
+      if (requestId !== nearbyRequestId) return;
       showStatus(GEOLOCATION_ERROR_MESSAGES[err.code] ?? 'No se ha podido obtener tu ubicación.', 'error');
     },
     { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
@@ -958,7 +1009,7 @@ async function loadFavoriteCardPreview(stopId, network, previewEl) {
   try {
     const endpoint = network === 'crtm' ? '/api/crtm-arrives' : '/api/emt-arrives';
     const res = await fetch(`${endpoint}?stopId=${encodeURIComponent(stopId)}`);
-    const payload = await res.json();
+    const payload = await res.json().catch(() => ({}));
 
     if (!res.ok) throw new Error(payload.error || `Error ${res.status}`);
 
@@ -1041,7 +1092,10 @@ async function fetchArrivals(stopId, network, isExplicitSearch = false) {
   try {
     const endpoint = network === 'crtm' ? '/api/crtm-arrives' : '/api/emt-arrives';
     const res = await fetch(`${endpoint}?stopId=${encodeURIComponent(stopId)}`);
-    const payload = await res.json();
+    // .catch(): un cuelgue de la función serverless que llegue al límite de Vercel responde
+    // con una página HTML, no JSON — sin esto, res.json() lanzaba un SyntaxError críptico
+    // ("Unexpected token '<'...") en vez del mensaje de error legible de más abajo.
+    const payload = await res.json().catch(() => ({}));
 
     if (!isCurrentRequest(stopId, network)) return;
 
@@ -1358,7 +1412,10 @@ function isServiceActive(nowMin, startMin, stopMin) {
 const MAX_RELIABLE_ETA_SECONDS = 90 * 60;
 
 function hasReliableEta(seconds, network) {
-  if (typeof seconds !== 'number') return false;
+  // Number.isFinite en vez de typeof === 'number': typeof NaN también es 'number', y NaN
+  // se cuela aquí si algún día `seconds` viniera de un cálculo con una fecha inválida (ver
+  // fetchArrivals de api/crtm-arrives.js) en vez de null/undefined.
+  if (!Number.isFinite(seconds)) return false;
   if (network === 'crtm') return true;
   return seconds <= MAX_RELIABLE_ETA_SECONDS;
 }
