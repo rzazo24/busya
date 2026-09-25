@@ -131,17 +131,28 @@
         <p>Los tiempos de Interurbano son una predicción de CRTM, no una medición directa del
         bus — la información tarda un poco en llegar de cada empresa a CRTM y de ahí a la app,
         así que pueden adelantarse un poco a la llegada real. Si lo notas, puedes compensarlo
-        aquí (no afecta a EMT, que da su propio tiempo en directo):</p>
+        aquí (no afecta a EMT, que da su propio tiempo en directo). También puedes tocar el
+        tiempo de una llegada de Interurbano para cronometrarla y que la app te sugiera un
+        ajuste según lo que tardó de verdad.</p>
         <p class="settings-row">
           <label for="crtm-buffer-pref">Sumar a los tiempos de Interurbano:</label>
           <select id="crtm-buffer-pref">
             <option value="0">Sin ajuste</option>
+            <option value="30">+30 s</option>
             <option value="60">+1 min</option>
+            <option value="90">+1 min 30 s</option>
             <option value="120">+2 min</option>
+            <option value="150">+2 min 30 s</option>
             <option value="180">+3 min</option>
+            <option value="210">+3 min 30 s</option>
             <option value="240">+4 min</option>
+            <option value="270">+4 min 30 s</option>
             <option value="300">+5 min</option>
           </select>
+        </p>
+        <p id="crtm-buffer-suggestion" class="settings-row" hidden>
+          <span id="crtm-buffer-suggestion-text" class="settings-suggestion-text"></span>
+          <button id="crtm-buffer-suggestion-apply" type="button" class="settings-suggestion-btn">Aplicar</button>
         </p>
         <h3>Código fuente</h3>
         <p>BusYa es un proyecto personal de código abierto: <a href="https://github.com/rzazo24/busya" target="_blank" rel="noopener">github.com/rzazo24/busya</a>.</p>
@@ -176,12 +187,18 @@
   </div>
 
   <footer class="app-footer">
-    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.6.0</p>
+    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.7.0</p>
   </footer>
 
   <div id="update-banner" class="update-banner" hidden role="status" aria-live="polite">
     <span>Hay una versión nueva de BusYa disponible.</span>
     <button id="update-reload-btn" type="button">Recargar</button>
+  </div>
+
+  <div id="crtm-confirm-banner" class="update-banner" hidden role="status" aria-live="polite">
+    <span id="crtm-confirm-text"></span>
+    <button id="crtm-confirm-arrived-btn" type="button">Ya llegó</button>
+    <button id="crtm-confirm-cancel-btn" class="help-btn" type="button" aria-label="Cancelar cronómetro"></button>
   </div>
 
   <script src="js/app.js"></script>

@@ -6,6 +6,11 @@ const FAVORITE_LINES_STORAGE_KEY = 'busya:favoriteLines';
 const MOTION_PREFERENCE_KEY = 'busya:motionPreference';
 const THEME_PREFERENCE_KEY = 'busya:themePreference';
 const CRTM_BUFFER_KEY = 'busya:crtmDelayBufferSeconds';
+const CRTM_DELAY_SAMPLES_KEY = 'busya:crtmDelaySamples';
+const CRTM_DELAY_SAMPLES_MAX = 20; // muestras recientes de sobra para una media razonable, sin crecer sin límite
+const CRTM_DELAY_MIN_SAMPLES_FOR_SUGGESTION = 3; // menos que esto es más ruido que señal
+const CRTM_BUFFER_STEP_SECONDS = 30; // mismo paso que las opciones de #crtm-buffer-pref
+const CRTM_BUFFER_MAX_SECONDS = 300; // tope del propio selector (+5 min)
 const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 // Solo para el badge de red en las tarjetas de favoritos: ahí "CRTM" es más compacto que
 // "Interurbano" y ya lo reconoce quien mira esa lista. El toggle del buscador y los mensajes
@@ -83,6 +88,13 @@ const nearbyListEl = document.getElementById('nearby-list');
 const motionPrefSelect = document.getElementById('motion-pref');
 const themePrefSelect = document.getElementById('theme-pref');
 const crtmBufferSelect = document.getElementById('crtm-buffer-pref');
+const crtmBufferSuggestionEl = document.getElementById('crtm-buffer-suggestion');
+const crtmBufferSuggestionTextEl = document.getElementById('crtm-buffer-suggestion-text');
+const crtmBufferSuggestionApplyBtn = document.getElementById('crtm-buffer-suggestion-apply');
+const crtmConfirmBanner = document.getElementById('crtm-confirm-banner');
+const crtmConfirmTextEl = document.getElementById('crtm-confirm-text');
+const crtmConfirmArrivedBtn = document.getElementById('crtm-confirm-arrived-btn');
+const crtmConfirmCancelBtn = document.getElementById('crtm-confirm-cancel-btn');
 
 // Los botones estáticos empiezan vacíos en el HTML — se rellenan aquí, una sola vez, en vez
 // de repetir el marcado del SVG también en el HTML (ver comentario de los ICON_* de arriba).
@@ -93,6 +105,7 @@ helpCloseBtn.innerHTML = ICON_CLOSE;
 favoritesCloseBtn.innerHTML = ICON_CLOSE;
 apiStatusCloseBtn.innerHTML = ICON_CLOSE;
 nearbyCloseBtn.innerHTML = ICON_CLOSE;
+crtmConfirmCancelBtn.innerHTML = ICON_CLOSE;
 refreshBtn.innerHTML = ICON_REFRESH;
 shareBtn.innerHTML = ICON_SHARE;
 nearbyBtnIconEl.innerHTML = ICON_LOCATION;
@@ -181,6 +194,100 @@ crtmBufferSelect.addEventListener('change', () => {
   // Si hay una parada de CRTM ya en pantalla, refrescar ya para que el ajuste se note al
   // momento en vez de esperar al próximo refresco automático de 30s.
   if (currentStopId && currentNetwork === 'crtm') fetchArrivals(currentStopId, currentNetwork);
+  updateCrtmBufferSuggestion(); // por si el valor elegido a mano ya coincide con lo sugerido
+});
+
+// Cronómetro de CRTM: en vez de que la app intente detectar sola cuándo "ha llegado" un bus
+// (ver discusión previa — para cuando el bus real aparece, la lista ya puede estar mostrando
+// el siguiente, así que fiarse de "la fila que ahora mismo pone Llegando" compara contra la
+// predicción equivocada), es el usuario quien lo arranca a propósito tocando el ETA de la
+// llegada que va a esperar de verdad. Solo entonces se guarda una foto fija (línea, destino,
+// hora exacta que predijo CRTM) que ya no depende de cómo siga cambiando la lista — por eso el
+// aviso de confirmación vive aparte (mismo patrón que #update-banner), no dentro de la fila.
+let pendingCrtmConfirmation = null; // { line, destination, predictedAt } | null
+
+function getCrtmDelaySamples() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CRTM_DELAY_SAMPLES_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((n) => Number.isFinite(n)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addCrtmDelaySample(seconds) {
+  // Sin redondear ni descartar valores raros aquí (p.ej. negativos, si el bus llegó antes de
+  // lo previsto): son datos reales de una confirmación explícita del usuario, no un cálculo
+  // interno — el recorte a un rango razonable se hace solo al convertir la media en sugerencia.
+  const samples = [...getCrtmDelaySamples(), seconds].slice(-CRTM_DELAY_SAMPLES_MAX);
+  localStorage.setItem(CRTM_DELAY_SAMPLES_KEY, JSON.stringify(samples));
+  return samples;
+}
+
+function computeSuggestedCrtmBufferSeconds(samples) {
+  if (samples.length < CRTM_DELAY_MIN_SAMPLES_FOR_SUGGESTION) return null;
+  const average = samples.reduce((sum, s) => sum + s, 0) / samples.length;
+  const stepped = Math.round(average / CRTM_BUFFER_STEP_SECONDS) * CRTM_BUFFER_STEP_SECONDS;
+  return Math.min(CRTM_BUFFER_MAX_SECONDS, Math.max(0, stepped));
+}
+
+function formatBufferLabel(seconds) {
+  if (seconds === 0) return 'sin ajuste';
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (minutes === 0) return `+${secs} s`;
+  if (secs === 0) return `+${minutes} min`;
+  return `+${minutes} min ${secs} s`;
+}
+
+// Solo se muestra cuando hay bastantes confirmaciones Y la media que sale de ellas es
+// distinta de lo que ya está puesto — si coincide, no hay nada que sugerir. Nunca cambia el
+// selector por su cuenta: eso solo pasa si se toca "Aplicar" a propósito.
+function updateCrtmBufferSuggestion() {
+  const samples = getCrtmDelaySamples();
+  const suggested = computeSuggestedCrtmBufferSeconds(samples);
+  if (suggested === null || suggested === getCrtmDelayBufferSeconds()) {
+    crtmBufferSuggestionEl.hidden = true;
+    return;
+  }
+  crtmBufferSuggestionTextEl.textContent =
+    `Según tus ${samples.length} confirmaciones, el desfase medio es ${formatBufferLabel(suggested)}.`;
+  crtmBufferSuggestionEl.dataset.suggestedSeconds = String(suggested);
+  crtmBufferSuggestionEl.hidden = false;
+}
+
+updateCrtmBufferSuggestion();
+
+crtmBufferSuggestionApplyBtn.addEventListener('click', () => {
+  const suggested = Number(crtmBufferSuggestionEl.dataset.suggestedSeconds);
+  if (!Number.isFinite(suggested)) return;
+  crtmBufferSelect.value = String(suggested);
+  localStorage.setItem(CRTM_BUFFER_KEY, String(suggested));
+  crtmBufferSuggestionEl.hidden = true;
+  if (currentStopId && currentNetwork === 'crtm') fetchArrivals(currentStopId, currentNetwork);
+});
+
+function armCrtmConfirmation(line, destination, estimateArriveSeconds) {
+  pendingCrtmConfirmation = { line, destination, predictedAt: Date.now() + estimateArriveSeconds * 1000 };
+  const predictedTimeLabel = formatTime(new Date(pendingCrtmConfirmation.predictedAt));
+  crtmConfirmTextEl.textContent =
+    `Cronometrando ${line}${destination ? ` (${destination})` : ''} — CRTM decía ${predictedTimeLabel}.`;
+  crtmConfirmBanner.hidden = false;
+}
+
+function cancelCrtmConfirmation() {
+  pendingCrtmConfirmation = null;
+  crtmConfirmBanner.hidden = true;
+}
+
+crtmConfirmCancelBtn.addEventListener('click', cancelCrtmConfirmation);
+
+crtmConfirmArrivedBtn.addEventListener('click', () => {
+  if (!pendingCrtmConfirmation) return;
+  const offsetSeconds = Math.round((Date.now() - pendingCrtmConfirmation.predictedAt) / 1000);
+  addCrtmDelaySample(offsetSeconds);
+  cancelCrtmConfirmation();
+  updateCrtmBufferSuggestion();
 });
 
 let refreshTimer = null;
@@ -521,6 +628,7 @@ function setNetwork(network, { resetResults = false } = {}) {
     nearbyRequestId++;
     hideStatus();
     updateFavoriteBtn();
+    cancelCrtmConfirmation(); // un cronómetro en marcha ya no tiene sentido en la red nueva
     // Se quita ?stop= de la URL (con replaceState, no pushState, igual que updateUrlForStop)
     // para no dejar un enlace compartible que diga tener una parada de la red anterior.
     const url = new URL(window.location.href);
@@ -533,6 +641,7 @@ function setNetwork(network, { resetResults = false } = {}) {
 function searchStop(stopId, network = currentNetwork) {
   nearbyResultsEl.hidden = true;
   nearbyRequestId++; // invalida cualquier búsqueda de paradas cercanas que siguiera en vuelo
+  cancelCrtmConfirmation(); // una nueva búsqueda de parada invalida cualquier cronómetro en marcha
   setNetwork(network);
   currentStopId = stopId;
   localStorage.setItem(LAST_STOP_STORAGE_KEY, stopId);
@@ -1351,9 +1460,18 @@ function renderArrivalItem(arrival, network) {
   destination.className = 'arrival-item__destination';
   destination.textContent = arrival.destination;
 
-  const eta = document.createElement('span');
+  // Solo se puede cronometrar una llegada de CRTM con una estimación fiable de verdad — sin
+  // eso no hay una "hora que dijo CRTM" contra la que comparar el momento de la confirmación.
+  const isTimeable = network === 'crtm' && hasReliableEta(arrival.estimateArrive, network);
+  const eta = document.createElement(isTimeable ? 'button' : 'span');
   eta.className = `arrival-item__eta ${etaClass(arrival.estimateArrive, network)}`;
   eta.textContent = formatEta(arrival.estimateArrive, network);
+  if (isTimeable) {
+    eta.type = 'button';
+    eta.classList.add('arrival-item__eta--timeable');
+    eta.title = 'Cronometrar esta llegada';
+    eta.addEventListener('click', () => armCrtmConfirmation(arrival.line, arrival.destination, arrival.estimateArrive));
+  }
 
   const distance = document.createElement('span');
   distance.className = 'arrival-item__distance';

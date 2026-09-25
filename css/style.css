@@ -546,6 +546,21 @@ main {
   color: var(--green);
 }
 
+/* Solo en CRTM con una estimación fiable (ver renderArrivalItem): ahí el ETA es un <button>
+   de verdad, no un <span>, para poder tocarlo y cronometrar esa llegada — se resetean los
+   estilos por defecto de botón para que siga pareciendo el mismo texto de antes, con un
+   subrayado discontinuo como única pista de que es tocable. */
+.arrival-item__eta--timeable {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
 .arrival-item__eta.eta-soon {
   color: var(--orange);
 }
@@ -980,6 +995,26 @@ main {
   font-size: 12px;
 }
 
+.settings-suggestion-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.settings-suggestion-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .api-status-panel {
   position: relative;
   width: 100%;
@@ -1185,6 +1220,10 @@ main {
   .nearby-stop:hover {
     background: var(--hover-tint);
   }
+
+  .settings-suggestion-btn:hover {
+    background: var(--hover-tint);
+  }
 }
 
 /* Mismos efectos que el bloque :hover de arriba, pero como :active y sin la guarda
@@ -1242,6 +1281,10 @@ main {
 }
 
 .nearby-stop:active {
+  background: var(--hover-tint);
+}
+
+.settings-suggestion-btn:active {
   background: var(--hover-tint);
 }
 
