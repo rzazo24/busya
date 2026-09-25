@@ -6,6 +6,17 @@ Añadido/Corregido. A partir de la v1.0.0 cada versión corresponde a un commit 
 `package.json` (enlazado por su hash); antes de eso el proyecto no llevaba un número de
 versión con significado, así que la v0.1.0 agrupa por tema todo el desarrollo inicial.
 
+## [1.6.0] - 2026-09-25
+
+### Añadido
+
+- Ajuste de CRTM: selector en el panel de ayuda (0 a +5 min, apagado por defecto) para
+  compensar que los tiempos de Interurbano suelen adelantarse un poco a la llegada real del
+  bus — es una predicción de CRTM, no una medición directa, y la información tarda en llegar
+  de cada empresa a CRTM y de ahí a la app. No hay forma fiable de saber el desfase exacto ni
+  si es constante, así que en vez de un ajuste fijo adivinado se deja en manos de quien usa la
+  app. No afecta a EMT. ([5c27158])
+
 ## [1.5.6] - 2026-09-19
 
 ### Corregido
@@ -323,3 +334,4 @@ resumido aquí por tema en vez de commit por commit.
 [1a4a4c1]: https://github.com/rzazo24/busya/commit/1a4a4c1d31b115ace9a386bdc9a3c2d540831f98
 [ffdca08]: https://github.com/rzazo24/busya/commit/ffdca08478828f437903e94b78d090c8576093b0
 [630f4d6]: https://github.com/rzazo24/busya/commit/630f4d6744d6004b9766a4071850c790d4e0937b
+[5c27158]: https://github.com/rzazo24/busya/commit/5c2715814a5c3ea59c59bd60202c77da066de0ab
