@@ -6,6 +6,14 @@ Añadido/Corregido. A partir de la v1.0.0 cada versión corresponde a un commit 
 `package.json` (enlazado por su hash); antes de eso el proyecto no llevaba un número de
 versión con significado, así que la v0.1.0 agrupa por tema todo el desarrollo inicial.
 
+## [1.7.1] - 2026-09-25
+
+### Añadido
+
+- Aviso en el panel de ayuda: el ajuste de CRTM (manual o sugerido por el cronómetro) es una
+  media, no una garantía — algún día el bus puede llegar antes de lo que marca la app con el
+  ajuste puesto. ([741a233])
+
 ## [1.7.0] - 2026-09-25
 
 ### Añadido
@@ -349,3 +357,4 @@ resumido aquí por tema en vez de commit por commit.
 [630f4d6]: https://github.com/rzazo24/busya/commit/630f4d6744d6004b9766a4071850c790d4e0937b
 [5c27158]: https://github.com/rzazo24/busya/commit/5c2715814a5c3ea59c59bd60202c77da066de0ab
 [1f472ee]: https://github.com/rzazo24/busya/commit/1f472ee80c5352252b721dbb9ccb97bb215e04b9
+[741a233]: https://github.com/rzazo24/busya/commit/741a233c2bb1524a4d18dcab91b3b21075bfb501
