@@ -6,6 +6,19 @@ Añadido/Corregido. A partir de la v1.0.0 cada versión corresponde a un commit 
 `package.json` (enlazado por su hash); antes de eso el proyecto no llevaba un número de
 versión con significado, así que la v0.1.0 agrupa por tema todo el desarrollo inicial.
 
+## [1.7.2] - 2026-09-25
+
+### Corregido
+
+- Solo la llegada más próxima de cada línea de Interurbano es cronometrable, no cualquiera de
+  sus llegadas posteriores — esas son las más propensas a reordenarse o sustituirse antes de
+  llegar de verdad, así que cronometrarlas medía a menudo la predicción equivocada.
+- El botón de cancelar del cronómetro se veía con la forma rectangular del banner en vez del
+  círculo pequeño de `.help-btn` (un selector más específico se lo pisaba sin querer). Ahora se
+  ve como el círculo que tenía que ser, y en rojo para diferenciarlo de "Ya llegó".
+
+([dce8760])
+
 ## [1.7.1] - 2026-09-25
 
 ### Añadido
@@ -358,3 +371,4 @@ resumido aquí por tema en vez de commit por commit.
 [5c27158]: https://github.com/rzazo24/busya/commit/5c2715814a5c3ea59c59bd60202c77da066de0ab
 [1f472ee]: https://github.com/rzazo24/busya/commit/1f472ee80c5352252b721dbb9ccb97bb215e04b9
 [741a233]: https://github.com/rzazo24/busya/commit/741a233c2bb1524a4d18dcab91b3b21075bfb501
+[dce8760]: https://github.com/rzazo24/busya/commit/dce876003f88b6cd21452ba1a4b3bb750f31b04f
