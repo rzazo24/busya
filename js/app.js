@@ -1428,13 +1428,29 @@ function renderArrivalsList(arrivals, network) {
       rest.push(arrival);
     }
 
+    // Solo se puede cronometrar la llegada más próxima DE CADA LÍNEA, no cualquiera de sus
+    // llegadas posteriores: esas son más propensas a reordenarse o sustituirse antes de que
+    // lleguen de verdad (ver armCrtmConfirmation), así que cronometrarlas mediría a menudo la
+    // llegada equivocada. Se calcula sobre las llegadas con estimación fiable únicamente —
+    // una línea con solo llegadas sin estimación no tiene ninguna fila cronometrable.
+    const nearestByLine = new Map(); // línea -> su llegada con menor estimateArrive
+    if (network === 'crtm') {
+      for (const arrival of arrivals) {
+        if (!hasReliableEta(arrival.estimateArrive, network)) continue;
+        const key = String(arrival.line);
+        const current = nearestByLine.get(key);
+        if (!current || arrival.estimateArrive < current.estimateArrive) nearestByLine.set(key, arrival);
+      }
+    }
+
     for (const arrival of [...promoted, ...rest]) {
-      arrivalsListEl.appendChild(renderArrivalItem(arrival, network));
+      const isNearestOfLine = nearestByLine.get(String(arrival.line)) === arrival;
+      arrivalsListEl.appendChild(renderArrivalItem(arrival, network, isNearestOfLine));
     }
   }
 }
 
-function renderArrivalItem(arrival, network) {
+function renderArrivalItem(arrival, network, isNearestOfLine) {
   const li = document.createElement('li');
   li.className = 'arrival-item';
 
@@ -1460,9 +1476,10 @@ function renderArrivalItem(arrival, network) {
   destination.className = 'arrival-item__destination';
   destination.textContent = arrival.destination;
 
-  // Solo se puede cronometrar una llegada de CRTM con una estimación fiable de verdad — sin
-  // eso no hay una "hora que dijo CRTM" contra la que comparar el momento de la confirmación.
-  const isTimeable = network === 'crtm' && hasReliableEta(arrival.estimateArrive, network);
+  // Solo la llegada más próxima de cada línea es cronometrable (isNearestOfLine, calculado en
+  // renderArrivalsList) — ya implica una estimación fiable, porque nearestByLine solo se
+  // construye a partir de llegadas con hasReliableEta.
+  const isTimeable = network === 'crtm' && isNearestOfLine;
   const eta = document.createElement(isTimeable ? 'button' : 'span');
   eta.className = `arrival-item__eta ${etaClass(arrival.estimateArrive, network)}`;
   eta.textContent = formatEta(arrival.estimateArrive, network);

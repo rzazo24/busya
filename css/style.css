@@ -1391,3 +1391,18 @@ html[data-motion="off"] .loading-dots__dot {
   cursor: pointer;
   flex-shrink: 0;
 }
+
+/* #crtm-confirm-cancel-btn es también .help-btn (círculo pequeño con el icono de cerrar), pero
+   ".update-banner button" de arriba pesa más (clase + etiqueta gana a una sola clase) y le
+   pisaba el tamaño/borde/relleno propios de .help-btn — un selector de id basta para
+   recuperarlos, y de paso ponerlo en rojo para que quede claro que cancela sin guardar nada
+   (distinto del acento del botón "Ya llegó", que si confirma). */
+#crtm-confirm-cancel-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  border-color: var(--red);
+  color: var(--red);
+}
