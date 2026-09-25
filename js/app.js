@@ -5,6 +5,7 @@ const FAVORITES_STORAGE_KEY = 'busya:favorites';
 const FAVORITE_LINES_STORAGE_KEY = 'busya:favoriteLines';
 const MOTION_PREFERENCE_KEY = 'busya:motionPreference';
 const THEME_PREFERENCE_KEY = 'busya:themePreference';
+const CRTM_BUFFER_KEY = 'busya:crtmDelayBufferSeconds';
 const NETWORK_LABELS = { emt: 'EMT', crtm: 'Interurbano' };
 // Solo para el badge de red en las tarjetas de favoritos: ahí "CRTM" es más compacto que
 // "Interurbano" y ya lo reconoce quien mira esa lista. El toggle del buscador y los mensajes
@@ -81,6 +82,7 @@ const nearbyCloseBtn = document.getElementById('nearby-close');
 const nearbyListEl = document.getElementById('nearby-list');
 const motionPrefSelect = document.getElementById('motion-pref');
 const themePrefSelect = document.getElementById('theme-pref');
+const crtmBufferSelect = document.getElementById('crtm-buffer-pref');
 
 // Los botones estáticos empiezan vacíos en el HTML — se rellenan aquí, una sola vez, en vez
 // de repetir el marcado del SVG también en el HTML (ver comentario de los ICON_* de arriba).
@@ -157,6 +159,28 @@ themePrefSelect.addEventListener('change', () => {
 // no — sin esto se quedaría con el color del tema anterior hasta la próxima recarga.
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
   if (getThemePreference() === 'auto') applyThemePreference('auto');
+});
+
+// Ajuste de CRTM: los tiempos de Interurbano son una predicción de CRTM, no una medición
+// directa del bus — la información tarda un poco en llegar de cada empresa a CRTM y de ahí a
+// la app, así que suelen adelantarse un poco a la llegada real (confirmado por el usuario
+// comparándolo con otras apps que beben de la misma fuente, no es un fallo de cálculo de
+// BusYa). No hay forma fiable de saber cuánto exactamente ni si es constante, así que en vez
+// de adivinar un ajuste fijo se deja en manos de quien usa la app, apagado por defecto — igual
+// que el tema y las animaciones, nadie ve cambiar nada si no toca el selector. Se aplica solo
+// a CRTM (ver normalizeCrtm), nunca a EMT, que da su propio tiempo en directo sin este retraso.
+function getCrtmDelayBufferSeconds() {
+  const stored = Number(localStorage.getItem(CRTM_BUFFER_KEY));
+  return Number.isFinite(stored) && stored >= 0 ? stored : 0;
+}
+
+crtmBufferSelect.value = String(getCrtmDelayBufferSeconds());
+
+crtmBufferSelect.addEventListener('change', () => {
+  localStorage.setItem(CRTM_BUFFER_KEY, crtmBufferSelect.value);
+  // Si hay una parada de CRTM ya en pantalla, refrescar ya para que el ajuste se note al
+  // momento en vez de esperar al próximo refresco automático de 30s.
+  if (currentStopId && currentNetwork === 'crtm') fetchArrivals(currentStopId, currentNetwork);
 });
 
 let refreshTimer = null;
@@ -1209,7 +1233,16 @@ function normalizeEmt(payload) {
 }
 
 function normalizeCrtm(payload) {
-  return { stopName: payload.stopName || null, arrivals: payload.arrivals ?? [] };
+  // Ajuste de CRTM (ver arriba): se suma aquí, en el único sitio por el que pasan todas las
+  // llegadas de CRTM (vista principal y vista previa de favoritos), en vez de en cada sitio
+  // que las pinta. No toca las que ya no tienen estimación fiable (estimateArrive: null).
+  const bufferSeconds = getCrtmDelayBufferSeconds();
+  const arrivals = (payload.arrivals ?? []).map((arrival) =>
+    Number.isFinite(arrival.estimateArrive)
+      ? { ...arrival, estimateArrive: arrival.estimateArrive + bufferSeconds }
+      : arrival
+  );
+  return { stopName: payload.stopName || null, arrivals };
 }
 
 function renderArrivals(normalized, network) {

@@ -127,6 +127,22 @@
             <option value="off">Desactivadas</option>
           </select>
         </p>
+        <h3>Ajuste de CRTM</h3>
+        <p>Los tiempos de Interurbano son una predicción de CRTM, no una medición directa del
+        bus — la información tarda un poco en llegar de cada empresa a CRTM y de ahí a la app,
+        así que pueden adelantarse un poco a la llegada real. Si lo notas, puedes compensarlo
+        aquí (no afecta a EMT, que da su propio tiempo en directo):</p>
+        <p class="settings-row">
+          <label for="crtm-buffer-pref">Sumar a los tiempos de Interurbano:</label>
+          <select id="crtm-buffer-pref">
+            <option value="0">Sin ajuste</option>
+            <option value="60">+1 min</option>
+            <option value="120">+2 min</option>
+            <option value="180">+3 min</option>
+            <option value="240">+4 min</option>
+            <option value="300">+5 min</option>
+          </select>
+        </p>
         <h3>Código fuente</h3>
         <p>BusYa es un proyecto personal de código abierto: <a href="https://github.com/rzazo24/busya" target="_blank" rel="noopener">github.com/rzazo24/busya</a>.</p>
       </div>
@@ -160,7 +176,7 @@
   </div>
 
   <footer class="app-footer">
-    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.5.6</p>
+    <p>Datos de <a href="https://www.emtmadrid.es" target="_blank" rel="noopener">EMT Madrid</a> y <a href="https://www.crtm.es" target="_blank" rel="noopener">CRTM</a> · se actualiza cada 30 s · v1.6.0</p>
   </footer>
 
   <div id="update-banner" class="update-banner" hidden role="status" aria-live="polite">

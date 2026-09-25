@@ -143,6 +143,15 @@ de carga) respetan `prefers-reduced-motion` del sistema por defecto. El panel de
 además un selector propio (Automático / Activadas / Desactivadas, guardado en `localStorage`)
 para forzarlas en cualquiera de los dos sentidos sin depender de los ajustes del sistema.
 
+## Ajuste de CRTM
+
+Los tiempos de Interurbano son una predicción de CRTM, no una medición directa del bus, y
+pueden adelantarse un poco a la llegada real (la información tarda en llegar de cada empresa a
+CRTM y de ahí a la app). El panel de ayuda tiene un selector (0 a +5 min, guardado en
+`localStorage`, apagado por defecto) para sumar un margen fijo a los tiempos de Interurbano;
+no afecta a EMT, que da su propio tiempo en directo. Se aplica en `normalizeCrtm` (`js/app.js`),
+así que cubre tanto la vista principal como la vista previa de cada favorito.
+
 ## Analíticas
 
 Vercel Web Analytics (visitas y Core Web Vitals, sin cookies ni datos personales) mediante
